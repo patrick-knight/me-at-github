@@ -11,6 +11,10 @@ A Chrome extension that helps you easily find and navigate to every place you've
 - ⬅️➡️ **Prev/Next Controls**: Hover over any highlighted mention to see navigation buttons for moving between mentions
 - 🎨 **GitHub-styled UI**: Seamlessly integrates with GitHub's interface (supports both light and dark modes)
 
+## Quick Start
+
+**New to the extension?** Check out the [Quick Start Guide](QUICKSTART.md) to get running in under 2 minutes!
+
 ## Installation
 
 ### From Source (Developer Mode)
@@ -20,6 +24,8 @@ A Chrome extension that helps you easily find and navigate to every place you've
 3. Enable "Developer mode" using the toggle in the top right
 4. Click "Load unpacked" and select the extension directory
 5. Navigate to any GitHub issue, pull request, or discussion where you're mentioned
+
+📖 For detailed installation instructions, see [INSTALLATION.md](INSTALLATION.md)
 
 ## Usage
 
@@ -47,13 +53,21 @@ The extension:
 5. Creates an interactive dropdown for quick navigation
 6. Provides inline prev/next controls on each mention
 
+## Documentation
+
+- 📚 [QUICKSTART.md](QUICKSTART.md) - Get started in 2 minutes
+- 📖 [FEATURES.md](FEATURES.md) - Complete feature list and technical specs
+- 📋 [EXAMPLES.md](EXAMPLES.md) - Detailed usage examples and use cases
+- 🔧 [INSTALLATION.md](INSTALLATION.md) - Detailed installation guide
+- 🛠 [CONTRIBUTING.md](CONTRIBUTING.md) - Development and contribution guide
+
 ## Development
 
 The extension consists of:
 - `manifest.json` - Chrome extension configuration
-- `content.js` - Main logic for finding and highlighting mentions
-- `styles.css` - Styling for the counter, dropdown, and highlights
-- `icons/` - Extension icons in various sizes
+- `content.js` - Main logic for finding and highlighting mentions (~400 lines)
+- `styles.css` - Styling for the counter, dropdown, and highlights (~200 lines)
+- `icons/` - Extension icons in various sizes (16px, 48px, 128px)
 
 ## Privacy
 
