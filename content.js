@@ -240,13 +240,21 @@
       const li = document.createElement('li');
       li.classList.add('me-at-github-dropdown-item');
       
-      // Get context around the mention
-      const context = getContextText(mention);
+      // Create index span
+      const indexSpan = document.createElement('span');
+      indexSpan.classList.add('me-at-github-dropdown-index');
+      indexSpan.textContent = `#${index + 1}`;
       
-      li.innerHTML = `
-        <span class="me-at-github-dropdown-index">#${index + 1}</span>
-        <span class="me-at-github-dropdown-context">${context}</span>
-      `;
+      // Create context span
+      const contextSpan = document.createElement('span');
+      contextSpan.classList.add('me-at-github-dropdown-context');
+      
+      // Get context around the mention (returns HTML-escaped string with <strong> tags)
+      const context = getContextText(mention);
+      contextSpan.innerHTML = context; // Safe because context is properly escaped
+      
+      li.appendChild(indexSpan);
+      li.appendChild(contextSpan);
       
       li.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -279,13 +287,20 @@
     if (startIndex > 0) context = '...' + context;
     if (endIndex < text.length) context = context + '...';
     
-    // Escape HTML
-    context = context.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Escape HTML special characters
+    const escapeHtml = (str) => {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    };
     
-    // Highlight the mention
+    context = escapeHtml(context);
+    
+    // Safely highlight the mention (after escaping)
+    const escapedUsername = escapeHtml(username);
     context = context.replace(
-      new RegExp(`@${username}`, 'gi'),
-      `<strong>@${username}</strong>`
+      new RegExp(`@${escapedUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi'),
+      `<strong>@${escapedUsername}</strong>`
     );
     
     return context;
