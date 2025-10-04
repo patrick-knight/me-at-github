@@ -245,13 +245,13 @@
       indexSpan.classList.add('me-at-github-dropdown-index');
       indexSpan.textContent = `#${index + 1}`;
       
-      // Create context span
+      // Create context span with safe DOM manipulation
       const contextSpan = document.createElement('span');
       contextSpan.classList.add('me-at-github-dropdown-context');
       
-      // Get context around the mention (returns HTML-escaped string with <strong> tags)
-      const context = getContextText(mention);
-      contextSpan.innerHTML = context; // Safe because context is properly escaped
+      // Get context as DocumentFragment with proper text nodes and strong tags
+      const contextFragment = createContextElement(mention);
+      contextSpan.appendChild(contextFragment);
       
       li.appendChild(indexSpan);
       li.appendChild(contextSpan);
@@ -274,8 +274,8 @@
     });
   }
 
-  // Get context text around a mention
-  function getContextText(mention) {
+  // Get context text around a mention and create DOM nodes
+  function createContextElement(mention) {
     const text = mention.text;
     const mentionText = `@${username}`;
     const startIndex = Math.max(0, mention.index - 30);
@@ -287,23 +287,37 @@
     if (startIndex > 0) context = '...' + context;
     if (endIndex < text.length) context = context + '...';
     
-    // Escape HTML special characters
-    const escapeHtml = (str) => {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    };
+    // Create a document fragment to hold the context
+    const fragment = document.createDocumentFragment();
     
-    context = escapeHtml(context);
+    // Find the mention in the context
+    const mentionPattern = new RegExp(`@${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi');
+    let lastIndex = 0;
+    let match;
     
-    // Safely highlight the mention (after escaping)
-    const escapedUsername = escapeHtml(username);
-    context = context.replace(
-      new RegExp(`@${escapedUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi'),
-      `<strong>@${escapedUsername}</strong>`
-    );
+    // Split context by mentions and create text nodes and strong tags
+    const matches = [...context.matchAll(mentionPattern)];
     
-    return context;
+    matches.forEach((match) => {
+      // Add text before the mention
+      if (match.index > lastIndex) {
+        fragment.appendChild(document.createTextNode(context.substring(lastIndex, match.index)));
+      }
+      
+      // Add the mention in a strong tag
+      const strong = document.createElement('strong');
+      strong.textContent = match[0];
+      fragment.appendChild(strong);
+      
+      lastIndex = match.index + match[0].length;
+    });
+    
+    // Add remaining text
+    if (lastIndex < context.length) {
+      fragment.appendChild(document.createTextNode(context.substring(lastIndex)));
+    }
+    
+    return fragment;
   }
 
   // Toggle dropdown visibility
