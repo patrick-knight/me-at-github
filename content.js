@@ -165,7 +165,14 @@
 
   // Navigate to a specific mention
   function navigateToMention(index) {
-    if (index < 0 || index >= mentions.length) return;
+    if (mentions.length === 0) return;
+    
+    // Wrap around: if index is out of bounds, loop to the other end
+    if (index < 0) {
+      index = mentions.length - 1;
+    } else if (index >= mentions.length) {
+      index = 0;
+    }
     
     currentMentionIndex = index;
     const mention = mentions[index];
@@ -338,12 +345,39 @@
     }
   }
 
+  // Add keyboard shortcuts
+  function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      // Only handle shortcuts if we have mentions and not typing in an input
+      if (mentions.length === 0 || 
+          e.target.tagName === 'INPUT' || 
+          e.target.tagName === 'TEXTAREA' ||
+          e.target.isContentEditable) {
+        return;
+      }
+      
+      // Alt+N for next mention
+      if (e.altKey && e.key === 'n') {
+        e.preventDefault();
+        navigateToMention(currentMentionIndex + 1);
+      }
+      // Alt+P for previous mention
+      else if (e.altKey && e.key === 'p') {
+        e.preventDefault();
+        navigateToMention(currentMentionIndex - 1);
+      }
+    });
+  }
+
   // Run when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
+
+  // Setup keyboard shortcuts once
+  setupKeyboardShortcuts();
 
   // Listen for GitHub's PJAX navigation
   let lastUrl = location.href;

@@ -30,6 +30,13 @@ A Chrome extension that helps you easily find and navigate to every place you've
 5. Hover over any highlighted mention to see prev/next navigation buttons
 6. Use the navigation buttons to move between mentions sequentially
 
+### Keyboard Shortcuts
+
+- **Alt+N**: Navigate to the next mention
+- **Alt+P**: Navigate to the previous mention
+
+Note: Keyboard shortcuts work when you're not typing in an input field or text area.
+
 ## How It Works
 
 The extension:
