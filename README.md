@@ -65,8 +65,8 @@ The extension:
 
 The extension consists of:
 - `manifest.json` - Chrome extension configuration
-- `content.js` - Main logic for finding and highlighting mentions (~400 lines)
-- `styles.css` - Styling for the counter, dropdown, and highlights (~200 lines)
+- `content.js` - Main logic for finding and highlighting mentions (~430 lines)
+- `styles.css` - Styling for the counter, dropdown, and highlights (~230 lines)
 - `icons/` - Extension icons in various sizes (16px, 48px, 128px)
 
 ## Privacy

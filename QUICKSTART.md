@@ -6,8 +6,9 @@ Get up and running with Me @ GitHub in under 2 minutes!
 
 1. **Download**: Clone or download this repository
    ```bash
-   git clone https://github.com/patrick-knight/me-at-github.git
+   git clone https://github.com/YOUR_USERNAME/me-at-github.git
    ```
+   (Replace YOUR_USERNAME with the actual repository owner)
 
 2. **Open Chrome Extensions**: Navigate to `chrome://extensions/`
 
