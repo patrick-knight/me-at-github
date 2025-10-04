@@ -28,7 +28,6 @@
   function findMentions() {
     if (!username) return [];
     
-    const pattern = new RegExp(`@${username}\\b`, 'gi');
     const mentions = [];
     
     // Search in all text nodes
@@ -48,7 +47,8 @@
           }
           
           // Check if text contains the mention
-          if (pattern.test(node.textContent)) {
+          const mentionPattern = `@${username}`;
+          if (node.textContent.includes(mentionPattern)) {
             return NodeFilter.FILTER_ACCEPT;
           }
           return NodeFilter.FILTER_REJECT;
@@ -57,9 +57,10 @@
     );
     
     let node;
+    const pattern = new RegExp(`@${username}\\b`, 'gi');
     while (node = walker.nextNode()) {
       const text = node.textContent;
-      const matches = text.matchAll(pattern);
+      const matches = [...text.matchAll(pattern)];
       
       for (const match of matches) {
         mentions.push({
@@ -76,40 +77,62 @@
 
   // Highlight mentions and add navigation controls
   function highlightMentions() {
+    // Group mentions by their text node to process multiple mentions in the same node
+    const nodeGroups = new Map();
     mentions.forEach((mention, index) => {
-      const element = mention.element;
-      const text = mention.node.textContent;
-      const mentionText = `@${username}`;
-      
-      // Don't highlight if already highlighted
-      if (element.classList.contains('me-at-github-mention')) {
+      if (!nodeGroups.has(mention.node)) {
+        nodeGroups.set(mention.node, []);
+      }
+      nodeGroups.get(mention.node).push({ ...mention, originalIndex: index });
+    });
+    
+    // Process each text node
+    nodeGroups.forEach((mentionList, textNode) => {
+      // Skip if already processed
+      if (!textNode.parentNode || textNode.parentNode.classList?.contains('me-at-github-mention-text')) {
         return;
       }
       
-      // Wrap the mention in a span
-      const beforeText = text.substring(0, mention.index);
-      const afterText = text.substring(mention.index + mentionText.length);
+      const text = textNode.textContent;
+      const mentionText = `@${username}`;
+      const fragment = document.createDocumentFragment();
       
-      const wrapper = document.createElement('span');
-      wrapper.classList.add('me-at-github-mention');
-      wrapper.setAttribute('data-mention-index', index);
+      // Sort mentions by index to process them in order
+      mentionList.sort((a, b) => a.index - b.index);
       
-      const beforeNode = document.createTextNode(beforeText);
-      const mentionSpan = document.createElement('span');
-      mentionSpan.classList.add('me-at-github-mention-text');
-      mentionSpan.textContent = mentionText;
-      const afterNode = document.createTextNode(afterText);
+      let lastIndex = 0;
+      mentionList.forEach(mention => {
+        const index = mention.originalIndex;
+        
+        // Add text before the mention
+        if (mention.index > lastIndex) {
+          fragment.appendChild(document.createTextNode(text.substring(lastIndex, mention.index)));
+        }
+        
+        // Create mention span
+        const mentionSpan = document.createElement('span');
+        mentionSpan.classList.add('me-at-github-mention-text');
+        mentionSpan.textContent = mentionText;
+        mentionSpan.setAttribute('data-mention-index', index);
+        fragment.appendChild(mentionSpan);
+        
+        // Update the mention reference
+        mention.element = mentionSpan;
+        mentions[index].element = mentionSpan;
+        
+        lastIndex = mention.index + mentionText.length;
+        
+        // Add navigation controls
+        addNavigationControls(mentionSpan, index);
+      });
       
-      wrapper.appendChild(beforeNode);
-      wrapper.appendChild(mentionSpan);
-      wrapper.appendChild(afterNode);
+      // Add remaining text
+      if (lastIndex < text.length) {
+        fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+      }
       
-      // Replace the text node
-      mention.node.parentNode.replaceChild(wrapper, mention.node);
-      mention.element = mentionSpan;
-      
-      // Add navigation controls
-      addNavigationControls(mentionSpan, index);
+      // Replace the text node with the fragment
+      textNode.parentNode.replaceChild(fragment, textNode);
     });
   }
 
@@ -167,9 +190,16 @@
     const count = mentions.length;
     if (count === 0) return;
     
-    // Find the page title (h1)
-    const titleElement = document.querySelector('.gh-header-title, .js-issue-title, h1.js-issue-title');
-    if (!titleElement) return;
+    // Find the page title - try multiple selectors for different GitHub layouts
+    const titleElement = document.querySelector(
+      '.gh-header-title, .js-issue-title, h1.js-issue-title, ' +
+      'bdi.js-issue-title, h1[data-testid="issue-title"], ' +
+      '.gh-header-title .js-issue-title'
+    );
+    if (!titleElement) {
+      console.log('Me @ GitHub: Could not find title element');
+      return;
+    }
     
     // Create counter badge
     const counter = document.createElement('span');
@@ -266,8 +296,27 @@
     }
   }
 
+  // Clean up previous initialization
+  function cleanup() {
+    // Remove existing counters
+    document.querySelectorAll('.me-at-github-counter').forEach(el => el.remove());
+    
+    // Remove existing highlights
+    document.querySelectorAll('.me-at-github-mention-text').forEach(el => {
+      const parent = el.parentNode;
+      if (parent) {
+        // Replace with plain text
+        const textNode = document.createTextNode(el.textContent);
+        parent.replaceChild(textNode, el);
+      }
+    });
+  }
+
   // Initialize the extension
   function init() {
+    // Clean up any previous initialization
+    cleanup();
+    
     username = getUsername();
     if (!username) {
       console.log('Me @ GitHub: Could not detect username');
@@ -296,15 +345,12 @@
     init();
   }
 
-  // Also observe for dynamic content changes (GitHub uses PJAX)
-  const observer = new MutationObserver((mutations) => {
-    // Check if the page has changed significantly
-    const hasSignificantChange = mutations.some(mutation => {
-      return mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0;
-    });
-    
-    if (hasSignificantChange) {
-      // Re-initialize after a delay to let the page settle
+  // Listen for GitHub's PJAX navigation
+  let lastUrl = location.href;
+  const observer = new MutationObserver(() => {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      // Re-initialize after navigation
       setTimeout(init, 500);
     }
   });
