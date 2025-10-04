@@ -56,6 +56,7 @@ The extension:
 ## Documentation
 
 - 📚 [QUICKSTART.md](QUICKSTART.md) - Get started in 2 minutes
+- 🎨 [VISUAL_GUIDE.md](VISUAL_GUIDE.md) - Visual walkthrough with UI diagrams
 - 📖 [FEATURES.md](FEATURES.md) - Complete feature list and technical specs
 - 📋 [EXAMPLES.md](EXAMPLES.md) - Detailed usage examples and use cases
 - 🔧 [INSTALLATION.md](INSTALLATION.md) - Detailed installation guide
