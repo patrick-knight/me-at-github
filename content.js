@@ -345,28 +345,30 @@
     }
   }
 
-  // Add keyboard shortcuts
-  function setupKeyboardShortcuts() {
-    document.addEventListener('keydown', (e) => {
-      // Only handle shortcuts if we have mentions and not typing in an input
-      if (mentions.length === 0 || 
-          e.target.tagName === 'INPUT' || 
-          e.target.tagName === 'TEXTAREA' ||
-          e.target.isContentEditable) {
-        return;
-      }
-      
-      // Alt+N for next mention
-      if (e.altKey && e.key === 'n') {
-        e.preventDefault();
-        navigateToMention(currentMentionIndex + 1);
-      }
-      // Alt+P for previous mention
-      else if (e.altKey && e.key === 'p') {
-        e.preventDefault();
-        navigateToMention(currentMentionIndex - 1);
-      }
-    });
+  // Keyboard shortcut handler
+  function handleKeyboardShortcut(e) {
+    // Only handle shortcuts if:
+    // 1. We have a valid username (extension is initialized)
+    // 2. We have mentions on the page
+    // 3. User is not typing in an input field
+    if (!username || 
+        mentions.length === 0 || 
+        e.target.tagName === 'INPUT' || 
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.isContentEditable) {
+      return;
+    }
+    
+    // Alt+N for next mention
+    if (e.altKey && e.key === 'n') {
+      e.preventDefault();
+      navigateToMention(currentMentionIndex + 1);
+    }
+    // Alt+P for previous mention
+    else if (e.altKey && e.key === 'p') {
+      e.preventDefault();
+      navigateToMention(currentMentionIndex - 1);
+    }
   }
 
   // Run when DOM is ready
@@ -376,8 +378,8 @@
     init();
   }
 
-  // Setup keyboard shortcuts once
-  setupKeyboardShortcuts();
+  // Setup keyboard shortcuts once (no cleanup needed as it's a single global handler)
+  document.addEventListener('keydown', handleKeyboardShortcut);
 
   // Listen for GitHub's PJAX navigation
   let lastUrl = location.href;
