@@ -361,15 +361,15 @@
       if (parent.classList && parent.classList.contains('user-mention')) {
         // Wrap the entire link in our highlight span
         const mentionSpan = document.createElement('span');
-        mentionSpan.classList.add('me-at-github-mention-text');
-        mentionSpan.classList.add('me-at-github-link-wrapper');
+        mentionSpan.classList.add('me-at-github-mention-text', 'me-at-github-link-wrapper');
         
         // Get the index for this mention
         const index = mentionList[0].originalIndex;
         mentionSpan.setAttribute('data-mention-index', index);
         
-        // Move the link inside our span
-        parent.parentNode.insertBefore(mentionSpan, parent);
+        // Batch DOM operations to avoid reflows
+        const parentNode = parent.parentNode;
+        parentNode.insertBefore(mentionSpan, parent);
         mentionSpan.appendChild(parent);
         
         // Update the mention reference
@@ -546,18 +546,20 @@
     // Add active class to current mention
     mention.element.classList.add('active');
     
-    // Scroll to the mention with error handling
-    try {
-      mention.element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      });
-    } catch (error) {
-      // Fallback: try without smooth behavior
-      mention.element.scrollIntoView({
-        block: 'center'
-      });
-    }
+    // Scroll to the mention with error handling, using RAF to avoid forced reflow
+    requestAnimationFrame(() => {
+      try {
+        mention.element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      } catch (error) {
+        // Fallback: try without smooth behavior
+        mention.element.scrollIntoView({
+          block: 'center'
+        });
+      }
+    });
     
     return true;
   }
@@ -1372,12 +1374,17 @@
   
   // Listen for GitHub's PJAX navigation and content changes
   let lastUrl = location.href;
+  let mutationTimeout;
   const observer = new MutationObserver((mutations) => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       setTimeout(() => initializeWithRetry(), 1500);
       return;
     }
+    
+    // Debounce mutation checks to avoid excessive processing
+    clearTimeout(mutationTimeout);
+    mutationTimeout = setTimeout(() => {
     
     // Check for content changes that might affect mentions
     let shouldRehighlight = false;
@@ -1428,6 +1435,7 @@
         }
       }, 500);
     }
+    }, 300); // Debounce mutations by 300ms
   });
   
   observer.observe(document.body, {
@@ -1435,34 +1443,36 @@
     subtree: true
   });
   
-  // Fallback: periodic check for URL changes (in case other listeners miss something)
+  // Fallback: periodic check for URL changes (reduced frequency for better performance)
   let currentUrl = location.href;
   setInterval(() => {
     if (location.href !== currentUrl) {
       currentUrl = location.href;
       setTimeout(() => initializeWithRetry(), 500);
     }
-  }, 2000);
+  }, 5000);
   
-  // Health check: ensure extension is active on supported pages
+  // Health check: ensure extension is active on supported pages (reduced frequency for better performance)
   setInterval(() => {
+    // Only check if we have a username and document is visible
+    if (!username || document.hidden) return;
+    
     const supportedPagePatterns = [
-      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,  // Repository pages
-      /github\.com\/orgs\/[^/]+\/discussions\//,                    // Organization discussions
-      /github\.com\/[^/]+\/[^/]+\/discussions\//                   // Repository discussions (alternative pattern)
+      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,
+      /github\.com\/orgs\/[^/]+\/discussions\//,
+      /github\.com\/[^/]+\/[^/]+\/discussions\//
     ];
     
     const isSupported = supportedPagePatterns.some(pattern => pattern.test(location.href));
-    if (isSupported) {
-      const existingCounter = document.querySelector('.me-at-github-counter');
-      const bodyText = document.body.textContent || '';
-      const hasUsername = bodyText.includes(`@${username || 'unknown'}`);
-      
-      if (!existingCounter && hasUsername && username) {
+    if (isSupported && !document.querySelector('.me-at-github-counter')) {
+      // Use requestIdleCallback for non-critical reinitialization to avoid blocking
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(() => initializeWithRetry(), { timeout: 2000 });
+      } else {
         setTimeout(() => initializeWithRetry(), 1000);
       }
     }
-  }, 10000);
+  }, 30000);
 
   // Expose force initialization function for debugging
   window.meAtGitHubForceInit = function() {
