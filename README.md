@@ -15,8 +15,6 @@ A Chrome extension that helps you easily find and navigate to every place you've
 
 ## Quick Start
 
-**New to the extension?** Check out the [Quick Start Guide](QUICKSTART.md) to get running in under 2 minutes!
-
 ## Installation
 
 ### From Source (Developer Mode)
@@ -27,7 +25,7 @@ A Chrome extension that helps you easily find and navigate to every place you've
 4. Click "Load unpacked" and select the extension directory
 5. Navigate to any GitHub issue, pull request, or discussion where you're mentioned
 
-📖 For detailed installation instructions, see [INSTALLATION.md](INSTALLATION.md)
+
 
 ## Usage
 
@@ -59,11 +57,8 @@ The extension:
 
 ## Documentation
 
-- 📚 [QUICKSTART.md](QUICKSTART.md) - Get started in 2 minutes
 - 🎨 [VISUAL_GUIDE.md](VISUAL_GUIDE.md) - Visual walkthrough with UI diagrams
 - 📖 [FEATURES.md](FEATURES.md) - Complete feature list and technical specs
-- 📋 [EXAMPLES.md](EXAMPLES.md) - Detailed usage examples and use cases
-- 🔧 [INSTALLATION.md](INSTALLATION.md) - Detailed installation guide
 - 🛠 [CONTRIBUTING.md](CONTRIBUTING.md) - Development and contribution guide
 
 ## Development
