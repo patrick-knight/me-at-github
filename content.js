@@ -246,7 +246,8 @@
       const containers = document.querySelectorAll(selector);
       console.log(`Me @ GitHub: Found ${containers.length} containers for selector "${selector}"`);
       
-      containers.forEach((container) => {
+      containers.forEach((container, containerIdx) => {
+        console.log(`Me @ GitHub: Scanning container ${containerIdx + 1}:`, container.className, container.textContent.substring(0, 100) + '...');
         const walker = document.createTreeWalker(
           container,
           NodeFilter.SHOW_TEXT,
@@ -406,6 +407,11 @@
 
   // Add prev/next navigation controls to a mention
   function addNavigationControls(element, index) {
+    // Don't add navigation controls if there's only one mention or if disabled
+    if (mentions.length <= 1) {
+      return;
+    }
+    
     const nav = document.createElement('div');
     nav.classList.add('me-at-github-nav');
     
@@ -426,10 +432,13 @@
     // Show navigation on hover or active
     const showNav = () => {
       clearTimeout(hideTimeout);
-      // Only show if we have mentions to navigate through
+      // Only show if we have mentions to navigate through AND navigation is enabled
       if (mentions.length > 1) {
         nav.style.display = 'flex';
         isNavVisible = true;
+        console.log('Me @ GitHub: Showing navigation controls for mention', index + 1, 'of', mentions.length);
+      } else {
+        console.log('Me @ GitHub: Not showing navigation - only', mentions.length, 'mentions');
       }
     };
     
@@ -754,7 +763,15 @@
       
       // Get context as DocumentFragment with proper text nodes and strong tags
       const contextFragment = createContextElement(mention);
-      contextSpan.appendChild(contextFragment);
+      console.log('Me @ GitHub: Created context fragment:', contextFragment, 'for mention:', mention);
+      
+      if (contextFragment && contextFragment.childNodes.length > 0) {
+        contextSpan.appendChild(contextFragment);
+      } else {
+        // Fallback if no context could be created
+        contextSpan.textContent = `Mention #${index + 1}: @${username}`;
+        console.log('Me @ GitHub: Using fallback context for mention', index + 1);
+      }
       
       li.appendChild(indexSpan);
       li.appendChild(contextSpan);
@@ -789,32 +806,61 @@
     const fullText = mention.text || '';
     const mentionText = `@${username}`;
     
-    // If no text or very short text, show the full text
-    if (!fullText || fullText.length < 50) {
+    console.log('Me @ GitHub: Creating context for mention:', mention);
+    
+    // Try to get better context from the element
+    let contextText = fullText;
+    if (mention.element && mention.element.closest) {
+      const container = mention.element.closest('.comment-body, .js-comment-body, .markdown-body');
+      if (container) {
+        contextText = container.textContent || fullText;
+      }
+    }
+    
+    // If no meaningful text, create a simple display
+    if (!contextText || contextText.trim().length < 10) {
       const fragment = document.createDocumentFragment();
-      const displayText = fullText || mentionText;
+      fragment.appendChild(document.createTextNode(`Mentioned as `));
+      const strong = document.createElement('strong');
+      strong.textContent = mentionText;
+      fragment.appendChild(strong);
+      return fragment;
+    }
+    
+    // If short text, show it all with highlighting
+    if (contextText.length < 100) {
+      const fragment = document.createDocumentFragment();
+      const displayText = contextText.trim();
       
       // Find and highlight mentions
       const mentionPattern = new RegExp(`@${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi');
       let lastIndex = 0;
       const matches = [...displayText.matchAll(mentionPattern)];
       
-      matches.forEach((match) => {
-        if (match.index > lastIndex) {
-          fragment.appendChild(document.createTextNode(displayText.substring(lastIndex, match.index)));
+      if (matches.length === 0) {
+        // No matches found, just show the text
+        fragment.appendChild(document.createTextNode(displayText));
+      } else {
+        matches.forEach((match) => {
+          if (match.index > lastIndex) {
+            fragment.appendChild(document.createTextNode(displayText.substring(lastIndex, match.index)));
+          }
+          const strong = document.createElement('strong');
+          strong.textContent = match[0];
+          fragment.appendChild(strong);
+          lastIndex = match.index + match[0].length;
+        });
+        
+        if (lastIndex < displayText.length) {
+          fragment.appendChild(document.createTextNode(displayText.substring(lastIndex)));
         }
-        const strong = document.createElement('strong');
-        strong.textContent = match[0];
-        fragment.appendChild(strong);
-        lastIndex = match.index + match[0].length;
-      });
-      
-      if (lastIndex < displayText.length) {
-        fragment.appendChild(document.createTextNode(displayText.substring(lastIndex)));
       }
       
       return fragment;
     }
+    
+    // For longer text, use the original line-based logic
+    fullText = contextText;
     
     // Find the line containing the mention
     const lines = fullText.split('\n');
@@ -834,12 +880,18 @@
     }
     
     // If we didn't find a line, fall back to showing context around the mention
-    if (lineContent === '') {
+    if (lineContent === '' && mention.index >= 0) {
       const start = Math.max(0, mention.index - 50);
       const end = Math.min(fullText.length, mention.index + 50);
-      lineContent = fullText.substring(start, end);
+      lineContent = fullText.substring(start, end).trim();
       if (start > 0) lineContent = '...' + lineContent;
       if (end < fullText.length) lineContent = lineContent + '...';
+    }
+    
+    // Final fallback - just show some context from the full text
+    if (lineContent === '') {
+      lineContent = fullText.substring(0, 100).trim();
+      if (fullText.length > 100) lineContent += '...';
     }
     
     // If line is too long, truncate around the mention but prioritize showing full sentences
@@ -1113,6 +1165,21 @@
         // Replace with plain text for plain text mentions
         const textNode = document.createTextNode(el.textContent);
         parent.replaceChild(textNode, el);
+      }
+    });
+    
+    // Remove any navigation controls
+    document.querySelectorAll('.me-at-github-nav').forEach(el => el.remove());
+    
+    // Remove any dropdown elements
+    document.querySelectorAll('.me-at-github-dropdown, .me-at-github-dropdown-portal').forEach(el => el.remove());
+    
+    // Remove any raw navigation text that might be lingering
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(element => {
+      if (element.textContent && element.textContent.match(/^[←→]?\s*\d+\/\d+\s*[←→]?$/)) {
+        console.log('Me @ GitHub: Removing raw navigation text:', element.textContent, 'from', element.tagName);
+        element.remove();
       }
     });
   }
