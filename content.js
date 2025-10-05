@@ -32,10 +32,22 @@
     
     // First, find GitHub's native user mention links
     const mentionLinks = document.querySelectorAll('a.user-mention');
-    mentionLinks.forEach(link => {
+    console.log('Me @ GitHub: Found', mentionLinks.length, 'user-mention links');
+    
+    mentionLinks.forEach((link, idx) => {
       const linkText = link.textContent.trim();
+      const linkHref = link.getAttribute('href') || link.href;
+      
+      console.log(`Me @ GitHub: Link ${idx + 1}: text="${linkText}", href="${linkHref}"`);
+      
       // Check if this link mentions the current user
-      if (linkText === `@${username}` || link.href.endsWith(`/${username}`)) {
+      // GitHub's mention links have href like "/username" or "https://github.com/username"
+      const matchesText = linkText === `@${username}`;
+      const matchesHref = linkHref.endsWith(`/${username}`) || linkHref === `/${username}`;
+      
+      if (matchesText || matchesHref) {
+        console.log(`Me @ GitHub: Link ${idx + 1} matches current user!`);
+        
         // Find the text node inside the link
         const textNode = Array.from(link.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
         if (textNode) {
@@ -45,9 +57,14 @@
             index: 0,
             element: link
           });
+          console.log(`Me @ GitHub: Added mention from link ${idx + 1}`);
+        } else {
+          console.log(`Me @ GitHub: Link ${idx + 1} has no text node`);
         }
       }
     });
+    
+    console.log('Me @ GitHub: Found', mentions.length, 'mentions in user-mention links');
     
     // Then search in all other text nodes for plain text mentions
     const walker = document.createTreeWalker(
@@ -78,6 +95,7 @@
     
     let node;
     const pattern = new RegExp(`@${username}\\b`, 'gi');
+    let plainTextCount = 0;
     while (node = walker.nextNode()) {
       const text = node.textContent;
       const matches = [...text.matchAll(pattern)];
@@ -89,8 +107,11 @@
           index: match.index,
           element: node.parentElement
         });
+        plainTextCount++;
       }
     }
+    
+    console.log('Me @ GitHub: Found', plainTextCount, 'plain text mentions');
     
     return mentions;
   }
