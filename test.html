@@ -14,6 +14,28 @@
         button { margin: 10px 0; padding: 8px 16px; }
         .test-info { background: #fff3cd; padding: 10px; margin: 20px 0; border-radius: 6px; border: 1px solid #ffeaa7; }
         .spacer { height: 1000px; }
+        .fake-github-popup { 
+            position: fixed; 
+            top: 100px; 
+            right: 100px; 
+            background: #0969da; 
+            color: white; 
+            padding: 20px; 
+            border-radius: 6px; 
+            z-index: 999999; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        .fake-github-modal { 
+            position: fixed; 
+            top: 200px; 
+            right: 200px; 
+            background: #f6f8fa; 
+            border: 1px solid #d0d7de; 
+            padding: 15px; 
+            border-radius: 6px; 
+            z-index: 1000000; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
     </style>
 </head>
 <body>
@@ -58,7 +80,11 @@
                 <li>Resize your browser window to different sizes and test again</li>
                 <li>Scroll down to test the sticky counter</li>
                 <li>Try the dropdown at different scroll positions</li>
+                <li>Test navigation: use browser back/forward buttons</li>
+                <li>Test programmatic navigation with the buttons below</li>
             </ul>
+            <button onclick="testNavigation()">Test Navigation (History API)</button>
+            <button onclick="testBackForward()">Test Back/Forward Detection</button>
         </div>
 
         <!-- Add spacer to test sticky counter and scroll positioning -->
@@ -66,6 +92,17 @@
         
         <div class="comment">
             <p>This is way down the page to test sticky counter. Another @patrick-knight mention here!</p>
+        </div>
+
+        <!-- Test elements to simulate GitHub popups with high z-index -->
+        <div class="fake-github-popup">
+            Fake GitHub Popup<br>
+            z-index: 999999
+        </div>
+        
+        <div class="fake-github-modal">
+            Fake GitHub Modal<br>
+            z-index: 1000000
         </div>
     </div>
 
@@ -76,6 +113,20 @@
             
             // Simulate the button being removed like GitHub does
             event.target.remove();
+        }
+        
+        function testNavigation() {
+            // Test pushState navigation
+            console.log('Testing pushState navigation...');
+            history.pushState({test: true}, '', '?test=' + Date.now());
+        }
+        
+        function testBackForward() {
+            // Test back/forward detection
+            console.log('Testing back/forward - will go back in 2 seconds...');
+            setTimeout(() => {
+                history.back();
+            }, 2000);
         }
     </script>
 

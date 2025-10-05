@@ -503,6 +503,17 @@
     const dropdown = document.createElement('div');
     dropdown.classList.add('me-at-github-dropdown');
     dropdown.style.display = 'none';
+    dropdown.style.zIndex = '2147483647'; // Set maximum z-index immediately
+    
+    // Try to escape stacking context by appending to body if needed
+    dropdown.addEventListener('DOMNodeInserted', function() {
+      // Additional z-index enforcement when dropdown is shown
+      setTimeout(() => {
+        if (dropdown.style.display === 'block') {
+          ensureMaxZIndex(dropdown);
+        }
+      }, 0);
+    });
     
     const list = document.createElement('ul');
     list.classList.add('me-at-github-dropdown-list');
@@ -510,6 +521,7 @@
     mentions.forEach((mention, index) => {
       const li = document.createElement('li');
       li.classList.add('me-at-github-dropdown-item');
+      li.setAttribute('data-mention-index', index.toString());
       
       // Create index span
       const indexSpan = document.createElement('span');
@@ -606,11 +618,126 @@
     if (dropdown.style.display === 'none') {
       dropdown.style.display = 'block';
       
+      // Ensure maximum z-index
+      ensureMaxZIndex(dropdown);
+      
+      // Nuclear option: move dropdown to body if z-index issues persist
+      const counterRect = counter.getBoundingClientRect();
+      const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
+      
+      // Clean up any existing body-level dropdowns
+      bodyDropdowns.forEach(d => d.remove());
+      
+      // Check if dropdown is properly visible after a short delay
+      setTimeout(() => {
+        const dropdownRect = dropdown.getBoundingClientRect();
+        const isVisible = dropdownRect.width > 0 && dropdownRect.height > 0;
+        const computedZIndex = parseInt(window.getComputedStyle(dropdown).zIndex);
+        
+        if (!isVisible || computedZIndex < 1000000) {
+          console.log('Me @ GitHub: Dropdown may be hidden, creating body-level portal...');
+          createBodyPortalDropdown(counter, dropdown);
+        }
+      }, 100);
+      
       // Smart positioning to keep dropdown on screen
       positionDropdown(counter, dropdown);
     } else {
       dropdown.style.display = 'none';
+      // Clean up any body portal
+      const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
+      bodyDropdowns.forEach(d => d.remove());
     }
+  }
+  
+  // Create a body-level dropdown portal to escape stacking context issues
+  function createBodyPortalDropdown(counter, originalDropdown) {
+    const portalDropdown = originalDropdown.cloneNode(true);
+    portalDropdown.classList.add('me-at-github-dropdown-portal');
+    portalDropdown.style.position = 'fixed';
+    portalDropdown.style.zIndex = '2147483647';
+    
+    // Position relative to counter
+    const counterRect = counter.getBoundingClientRect();
+    portalDropdown.style.top = (counterRect.bottom + 8) + 'px';
+    portalDropdown.style.left = (counterRect.right - 300) + 'px';
+    
+    // Hide original and show portal
+    originalDropdown.style.display = 'none';
+    document.body.appendChild(portalDropdown);
+    
+    // Handle clicks on portal dropdown
+    portalDropdown.addEventListener('click', (e) => {
+      if (e.target.closest('.me-at-github-dropdown-item')) {
+        const index = parseInt(e.target.closest('.me-at-github-dropdown-item').dataset.mentionIndex);
+        if (!isNaN(index)) {
+          navigateToMention(index);
+          portalDropdown.remove();
+          originalDropdown.style.display = 'none';
+        }
+      }
+    });
+    
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', function closePortal(e) {
+        if (!portalDropdown.contains(e.target) && !counter.contains(e.target)) {
+          portalDropdown.remove();
+          document.removeEventListener('click', closePortal);
+        }
+      });
+    }, 0);
+    
+    console.log('Me @ GitHub: Created body-level dropdown portal');
+  }
+  
+  // Ensure dropdown has maximum z-index to appear above all GitHub elements
+  function ensureMaxZIndex(dropdown) {
+    // Set to maximum safe integer value with additional properties
+    dropdown.style.zIndex = '2147483647';
+    dropdown.style.position = 'absolute';
+    dropdown.style.isolation = 'isolate';
+    dropdown.style.willChange = 'transform';
+    dropdown.style.transform = 'translateZ(0)';
+    
+    // Also set z-index on parent counter
+    const counter = dropdown.closest('.me-at-github-counter');
+    if (counter) {
+      counter.style.position = 'relative';
+      counter.style.zIndex = '2147483647';
+      counter.style.isolation = 'isolate';
+    }
+    
+    // Check for GitHub popups and Box components
+    const githubElements = document.querySelectorAll([
+      '[role=\"dialog\"]',
+      '.Popover',
+      '.dropdown-menu', 
+      '.autocomplete-results',
+      '.suggester',
+      '[class*=\"Box-\"]',
+      '.Box-sc-g0xbh4-0',
+      '.crMLA-D',
+      '[class*=\"crMLA\"]'
+    ].join(', '));
+    
+    let maxZIndex = 2147483647;
+    
+    githubElements.forEach(element => {
+      const zIndex = parseInt(window.getComputedStyle(element).zIndex);
+      if (!isNaN(zIndex)) {
+        console.log(`Me @ GitHub: Found GitHub element with z-index ${zIndex}:`, element.className);
+        if (zIndex >= maxZIndex) {
+          maxZIndex = zIndex + 1;
+        }
+      }
+    });
+    
+    const finalZIndex = Math.min(maxZIndex, 2147483647).toString();
+    dropdown.style.zIndex = finalZIndex;
+    
+    console.log('Me @ GitHub: Set dropdown z-index to', finalZIndex);
+    console.log('Me @ GitHub: Dropdown element:', dropdown);
   }
   
   // Position dropdown to stay within viewport bounds
@@ -818,6 +945,28 @@
   // Setup keyboard shortcuts once (no cleanup needed as it's a single global handler)
   document.addEventListener('keydown', handleKeyboardShortcut);
 
+  // Listen for browser navigation (forward/back buttons)
+  window.addEventListener('popstate', () => {
+    console.log('Me @ GitHub: Browser navigation detected (popstate), re-initializing...');
+    setTimeout(() => initializeWithRetry(), 1000);
+  });
+  
+  // Listen for programmatic navigation (GitHub's single-page app routing)
+  const originalPushState = history.pushState;
+  const originalReplaceState = history.replaceState;
+  
+  history.pushState = function() {
+    originalPushState.apply(history, arguments);
+    console.log('Me @ GitHub: Programmatic navigation detected (pushState), re-initializing...');
+    setTimeout(() => initializeWithRetry(), 1000);
+  };
+  
+  history.replaceState = function() {
+    originalReplaceState.apply(history, arguments);
+    console.log('Me @ GitHub: Programmatic navigation detected (replaceState), re-initializing...');
+    setTimeout(() => initializeWithRetry(), 1000);
+  };
+  
   // Listen for GitHub's PJAX navigation and content changes
   let lastUrl = location.href;
   const observer = new MutationObserver((mutations) => {
@@ -879,6 +1028,16 @@
     childList: true,
     subtree: true
   });
+  
+  // Fallback: periodic check for URL changes (in case other listeners miss something)
+  let currentUrl = location.href;
+  setInterval(() => {
+    if (location.href !== currentUrl) {
+      currentUrl = location.href;
+      console.log('Me @ GitHub: URL change detected via periodic check, re-initializing...');
+      setTimeout(() => initializeWithRetry(), 500);
+    }
+  }, 2000); // Check every 2 seconds
 
   // Expose force initialization function for debugging
   window.meAtGitHubForceInit = function() {
