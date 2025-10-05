@@ -262,7 +262,7 @@ html .me-at-github-dropdown {
 
 /* Navigation controls */
 .me-at-github-nav {
-  display: none;
+  display: none !important;
   position: absolute;
   top: 100%;
   left: 50%;
@@ -277,13 +277,25 @@ html .me-at-github-dropdown {
   z-index: 2147483646 !important;
   align-items: center;
   gap: 4px;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Navigation shows on hover and stays visible longer */
 .me-at-github-mention-text:hover .me-at-github-nav,
-.me-at-github-mention-text.active .me-at-github-nav,
+.me-at-github-mention-text.active .me-at-github-nav {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
 .me-at-github-nav:hover {
   display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .me-at-github-nav-btn {
@@ -433,6 +445,21 @@ html .me-at-github-dropdown {
   max-width: 500px !important;
   max-height: 400px !important;
   overflow-y: auto !important;
+}
+
+/* Aggressive navigation control hiding */
+.me-at-github-nav {
+  display: none !important;
+}
+
+/* Only show when explicitly hovered */
+.me-at-github-mention-text:hover .me-at-github-nav {
+  display: flex !important;
+}
+
+/* Hide navigation controls completely if there's only one mention */
+.me-at-github-mention-text .me-at-github-nav {
+  display: none !important;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -83,8 +83,7 @@
                 <li>Test navigation: use browser back/forward buttons</li>
                 <li>Test programmatic navigation with the buttons below</li>
             </ul>
-            <button onclick="testNavigation()">Test Navigation (History API)</button>
-            <button onclick="testBackForward()">Test Back/Forward Detection</button>
+                        <button onclick=\"testNavigation()\">Test Navigation (History API)</button>\n            <button onclick=\"testBackForward()\">Test Back/Forward Detection</button>\n            <button onclick=\"testCacheNavigation()\">Test Cache Navigation</button>\n            <button onclick=\"checkExtensionStatus()\">Check Extension Status</button>\n            <button onclick=\"forceReinit()\">Force Re-initialization</button>
         </div>
 
         <!-- Add spacer to test sticky counter and scroll positioning -->
@@ -121,13 +120,7 @@
             history.pushState({test: true}, '', '?test=' + Date.now());
         }
         
-        function testBackForward() {
-            // Test back/forward detection
-            console.log('Testing back/forward - will go back in 2 seconds...');
-            setTimeout(() => {
-                history.back();
-            }, 2000);
-        }
+        function testBackForward() {\n            // Test back/forward detection\n            console.log('Testing back/forward - will go back in 2 seconds...');\n            setTimeout(() => {\n                history.back();\n            }, 2000);\n        }\n        \n        function testCacheNavigation() {\n            console.log('Testing cache navigation...');\n            // Navigate away and then back to test cache handling\n            const currentUrl = window.location.href;\n            window.location.href = 'about:blank';\n            setTimeout(() => {\n                window.location.href = currentUrl;\n            }, 1000);\n        }\n        \n        function checkExtensionStatus() {\n            console.log('=== Extension Status Check ===');\n            const counter = document.querySelector('.me-at-github-counter');\n            const mentions = document.querySelectorAll('.me-at-github-mention-text');\n            const stickyCounter = document.getElementById('me-at-github-sticky-counter');\n            \n            console.log('Counter element:', counter ? 'Found' : 'Not found');\n            console.log('Mention elements:', mentions.length);\n            console.log('Sticky counter:', stickyCounter ? 'Found' : 'Not found');\n            console.log('Extension functions available:', {\n                diagnostics: typeof window.meAtGitHubDiagnostics,\n                forceInit: typeof window.meAtGitHubForceInit,\n                reinit: typeof window.meAtGitHubReinit\n            });\n        }\n        \n        function forceReinit() {\n            console.log('Forcing extension re-initialization...');\n            if (typeof window.meAtGitHubReinit === 'function') {\n                window.meAtGitHubReinit();\n            } else {\n                console.log('Re-init function not available');\n            }\n        }
     </script>
 
     <script src="content.js"></script>

@@ -3,8 +3,7 @@
 (function() {
   'use strict';
   
-  // Immediate console log to verify script loading
-  console.log('🚀 Me @ GitHub extension loaded!', new Date().toISOString());
+    // Immediate console log to verify script loading\n  console.log('🚀 Me @ GitHub extension loaded!', new Date().toISOString());\n  \n  // Check if page was loaded from cache\n  if (window.performance && window.performance.navigation) {\n    const navType = window.performance.navigation.type;\n    console.log('Me @ GitHub: Navigation type:', navType);\n    if (navType === 2) { // TYPE_BACK_FORWARD\n      console.log('Me @ GitHub: Page loaded via back/forward navigation');\n    }\n  }\n  \n  // Check Performance Navigation API (modern browsers)\n  if (window.performance && window.performance.getEntriesByType) {\n    const navEntries = window.performance.getEntriesByType('navigation');\n    if (navEntries.length > 0) {\n      const navEntry = navEntries[0];\n      console.log('Me @ GitHub: Navigation entry type:', navEntry.type);\n      if (navEntry.type === 'back_forward') {\n        console.log('Me @ GitHub: Detected back/forward navigation via Performance API');\n      }\n    }\n  }"
 
   let username = null;
   let mentions = [];
@@ -237,6 +236,10 @@
   function addNavigationControls(element, index) {
     const nav = document.createElement('div');
     nav.classList.add('me-at-github-nav');
+    
+    // Ensure nav is hidden by default with inline style as fallback
+    nav.style.display = 'none';
+    
     nav.innerHTML = `
       <button class="me-at-github-nav-btn me-at-github-prev" title="Previous mention">←</button>
       <span class="me-at-github-nav-index">${index + 1}/${mentions.length}</span>
@@ -251,8 +254,11 @@
     // Show navigation on hover or active
     const showNav = () => {
       clearTimeout(hideTimeout);
-      nav.style.display = 'flex';
-      isNavVisible = true;
+      // Only show if we have mentions to navigate through
+      if (mentions.length > 1) {
+        nav.style.display = 'flex';
+        isNavVisible = true;
+      }
     };
     
     // Hide navigation with delay
@@ -954,9 +960,18 @@
   // Run when DOM is ready with multiple initialization attempts
   function initializeWithRetry(attempt = 1, maxAttempts = 5) {
     console.log(`Me @ GitHub: Initialization attempt ${attempt}/${maxAttempts}`);
+    console.log(`Me @ GitHub: Current URL: ${location.href}`);
+    console.log(`Me @ GitHub: Document ready state: ${document.readyState}`);
     
     if (attempt > maxAttempts) {
       console.log('Me @ GitHub: Max initialization attempts reached');
+      return;
+    }
+    
+    // Check if we're still on a supported page
+    const supportedPagePattern = /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//;
+    if (!supportedPagePattern.test(location.href)) {
+      console.log('Me @ GitHub: Not on supported page, skipping initialization');
       return;
     }
     
@@ -970,15 +985,34 @@
     }
   }
   
+  // Force re-initialization function (exposed globally for debugging)
+  window.meAtGitHubReinit = function() {
+    console.log('Me @ GitHub: Force re-initialization requested');
+    cleanup();
+    setTimeout(() => initializeWithRetry(), 100);
+  };
+  
   // Run when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('Me @ GitHub: DOMContentLoaded event fired');
       setTimeout(() => initializeWithRetry(), 1000);
     });
   } else {
+    console.log('Me @ GitHub: Document already ready');
     // Add a delay to ensure GitHub's dynamic content is loaded
     setTimeout(() => initializeWithRetry(), 1000);
   }
+  
+  // Additional initialization on page load (for cached pages)
+  window.addEventListener('load', () => {
+    console.log('Me @ GitHub: Window load event fired');
+    const existingCounter = document.querySelector('.me-at-github-counter');
+    if (!existingCounter) {
+      console.log('Me @ GitHub: No counter found on load, initializing...');
+      setTimeout(() => initializeWithRetry(), 500);
+    }
+  });
 
   // Setup keyboard shortcuts once (no cleanup needed as it's a single global handler)
   document.addEventListener('keydown', handleKeyboardShortcut);
@@ -987,6 +1021,40 @@
   window.addEventListener('popstate', () => {
     console.log('Me @ GitHub: Browser navigation detected (popstate), re-initializing...');
     setTimeout(() => initializeWithRetry(), 1000);
+  });
+  
+  // Listen for page show event (handles cached page returns)
+  window.addEventListener('pageshow', (event) => {
+    console.log('Me @ GitHub: Page show detected, persisted:', event.persisted);
+    if (event.persisted) {
+      // Page was loaded from cache (back/forward navigation)
+      console.log('Me @ GitHub: Page loaded from cache, re-initializing...');
+      setTimeout(() => initializeWithRetry(), 500);
+    }
+  });
+  
+  // Listen for visibility changes (tab becomes active)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      console.log('Me @ GitHub: Page became visible, checking if extension needs initialization...');
+      // Only re-initialize if we don't have any mentions or counters
+      const existingCounter = document.querySelector('.me-at-github-counter');
+      const existingMentions = document.querySelectorAll('.me-at-github-mention-text');
+      if (!existingCounter && existingMentions.length === 0) {
+        console.log('Me @ GitHub: No existing extension elements found, re-initializing...');
+        setTimeout(() => initializeWithRetry(), 1000);
+      }
+    }
+  });
+  
+  // Listen for window focus (browser becomes active)
+  window.addEventListener('focus', () => {
+    console.log('Me @ GitHub: Window focused, checking extension state...');
+    const existingCounter = document.querySelector('.me-at-github-counter');
+    if (!existingCounter && mentions.length > 0) {
+      console.log('Me @ GitHub: Extension elements missing but mentions exist, re-initializing...');
+      setTimeout(() => initializeWithRetry(), 500);
+    }
   });
   
   // Listen for programmatic navigation (GitHub's single-page app routing)
@@ -1004,6 +1072,12 @@
     console.log('Me @ GitHub: Programmatic navigation detected (replaceState), re-initializing...');
     setTimeout(() => initializeWithRetry(), 1000);
   };
+  
+  // Listen for hash changes (single-page navigation)
+  window.addEventListener('hashchange', () => {
+    console.log('Me @ GitHub: Hash change detected, re-initializing...');
+    setTimeout(() => initializeWithRetry(), 500);
+  });
   
   // Listen for GitHub's PJAX navigation and content changes
   let lastUrl = location.href;
@@ -1082,6 +1156,21 @@
       setTimeout(() => initializeWithRetry(), 500);
     }
   }, 2000); // Check every 2 seconds
+  
+  // Health check: ensure extension is active on supported pages
+  setInterval(() => {
+    const supportedPagePattern = /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//;
+    if (supportedPagePattern.test(location.href)) {
+      const existingCounter = document.querySelector('.me-at-github-counter');
+      const bodyText = document.body.textContent || '';
+      const hasUsername = bodyText.includes(`@${username || 'unknown'}`);
+      
+      if (!existingCounter && hasUsername && username) {
+        console.log('Me @ GitHub: Health check - extension should be active but counter missing, re-initializing...');
+        setTimeout(() => initializeWithRetry(), 1000);
+      }
+    }
+  }, 10000); // Check every 10 seconds
 
   // Expose force initialization function for debugging
   window.meAtGitHubForceInit = function() {
