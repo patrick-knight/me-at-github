@@ -23,7 +23,9 @@ This means the extension is finding mentions but not displaying the UI elements 
 4. Click the reload button (🔄)
 
 ### Step 2: Visit Issue Page (30 seconds)
-1. Go to: https://github.com/github/accessibility/issues/9373
+1. Go to any GitHub issue, PR, or discussion where you're mentioned
+   - Example: https://github.com/github/accessibility/issues/9373
+   - Or use any issue where your username appears
 2. Press F12 to open DevTools
 3. Click the Console tab
 4. Refresh the page (F5)
@@ -41,10 +43,10 @@ This will show you the extension's complete state.
 
 ### ✅ Success
 You should see:
-- A blue `@8` badge next to the issue title
+- A blue `@N` badge next to the issue title (N = number of mentions)
 - Light blue highlights on each mention of your username
 - Hover over mentions to see navigation controls (← →)
-- Click the badge to see dropdown menu
+- Click the badge to see dropdown menu with all mentions
 
 ### ⚠️ Still Not Working?
 If UI still doesn't show, the diagnostics will help us identify why.
@@ -65,7 +67,7 @@ document.querySelector('.me-at-github-counter')
 
 // Check highlights exist  
 document.querySelectorAll('.me-at-github-mention-text').length
-// Should return: 8 (or however many mentions you have)
+// Should return: Number of mentions on the page
 
 // Full diagnostics
 meAtGitHubDiagnostics()
@@ -96,9 +98,22 @@ console.log('Opacity:', getComputedStyle(counter).opacity);
 ### Issue: "Counter elements in DOM: 0"
 **Meaning**: Counter was never created or was removed.
 
-**Solution**: Check if title element was found:
+**Solution**: Check which title selectors work:
 ```javascript
-document.querySelector('h1.gh-header-title')
+// The extension tries these selectors in order:
+const selectors = [
+  'h1.gh-header-title',
+  'h1.js-issue-title',
+  'h1[data-testid="issue-title"]',
+  '.gh-header-title',
+  'bdi.js-issue-title',
+  'span.js-issue-title',
+  'h1'
+];
+selectors.forEach(s => {
+  const el = document.querySelector(s);
+  if (el) console.log(s, '✓ found', el);
+});
 ```
 
 ## Need More Help?
