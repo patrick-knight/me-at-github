@@ -227,17 +227,30 @@ html .me-at-github-dropdown {
   flex-shrink: 0;
 }
 
+/* Dropdown context text */
 .me-at-github-dropdown-context {
   flex: 1;
   font-size: 13px;
-  color: #1f2328;
-  line-height: 1.5;
-  word-break: break-word;
+  color: #656d76;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
 }
 
 .me-at-github-dropdown-context strong {
   color: #0969da;
   font-weight: 600;
+}
+
+/* Line number in dropdown context */
+.me-at-github-line-number {
+  color: #8b949e;
+  font-size: 11px;
+  font-weight: 500;
+  margin-right: 6px;
+  opacity: 0.8;
 }
 
 /* Mention highlighting */
@@ -248,30 +261,50 @@ html .me-at-github-dropdown {
 .me-at-github-mention-text {
   position: relative;
   display: inline !important;
-  background: #ddf4ff !important;
-  padding: 2px 4px;
+  background: rgba(255, 212, 0, 0.08) !important;
+  color: #1f2328 !important;
+  padding: 1px 3px;
   border-radius: 3px;
-  transition: background 0.2s ease;
+  border: 1px solid rgba(255, 212, 0, 0.2);
+  font-weight: 600;
+  transition: all 0.15s ease-in-out;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .me-at-github-mention-text:hover {
-  background: #b6e3ff;
+  background: rgba(255, 212, 0, 0.12) !important;
+  border-color: rgba(255, 212, 0, 0.35);
+  box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.1);
 }
 
 .me-at-github-mention-text.active {
-  background: #ffd33d;
-  outline: 2px solid #ffd33d;
-  outline-offset: 2px;
+  background: rgba(255, 212, 0, 0.2) !important;
+  border-color: #ffd33d;
+  box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.3);
+  color: #1f2328 !important;
 }
 
 /* Link wrapper for GitHub's native mentions */
 .me-at-github-link-wrapper {
   display: inline-block;
+  border-radius: 3px;
 }
 
 .me-at-github-link-wrapper a.user-mention {
-  color: inherit;
-  text-decoration: none;
+  color: inherit !important;
+  text-decoration: none !important;
+  font-weight: inherit !important;
+}
+
+/* Ensure mention links maintain proper styling */
+.me-at-github-mention-text a,
+.me-at-github-mention-text a:visited,
+.me-at-github-mention-text a:hover,
+.me-at-github-mention-text a:active {
+  color: inherit !important;
+  text-decoration: none !important;
+  background: none !important;
 }
 
 /* Navigation controls */
@@ -383,21 +416,38 @@ html .me-at-github-dropdown {
     color: #58a6ff;
   }
   
+  .me-at-github-line-number {
+    color: #7d8590;
+  }
+  
   .me-at-github-mention-text {
-    background: #1c2d3e;
+    background: rgba(255, 212, 0, 0.1) !important;
+    color: #f0f6fc !important;
+    border-color: rgba(255, 212, 0, 0.25);
   }
   
   .me-at-github-mention-text:hover {
-    background: #2d4052;
+    background: rgba(255, 212, 0, 0.15) !important;
+    border-color: rgba(255, 212, 0, 0.4);
+    box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.15);
   }
   
   .me-at-github-mention-text.active {
-    background: #693e00;
-    outline-color: #693e00;
+    background: rgba(255, 212, 0, 0.25) !important;
+    border-color: #ffd33d;
+    box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.4);
+    color: #0d1117 !important;
   }
   
   .me-at-github-link-wrapper a.user-mention {
-    color: #58a6ff;
+    color: inherit !important;
+  }
+  
+  .me-at-github-mention-text a,
+  .me-at-github-mention-text a:visited,
+  .me-at-github-mention-text a:hover,
+  .me-at-github-mention-text a:active {
+    color: inherit !important;
   }
   
   .me-at-github-sticky-counter {

@@ -612,34 +612,66 @@
     });
   }
 
-  // Get context text around a mention and create DOM nodes
+  // Get line content where the mention appears and create DOM nodes
   function createContextElement(mention) {
-    const text = mention.text;
+    const fullText = mention.text;
     const mentionText = `@${username}`;
-    const startIndex = Math.max(0, mention.index - 30);
-    const endIndex = Math.min(text.length, mention.index + mentionText.length + 30);
     
-    let context = text.substring(startIndex, endIndex);
+    // Find the line containing the mention
+    const lines = fullText.split('\n');
+    let lineContent = '';
+    let lineStartIndex = 0;
+    let mentionLineIndex = -1;
     
-    // Add ellipsis if truncated
-    if (startIndex > 0) context = '...' + context;
-    if (endIndex < text.length) context = context + '...';
+    // Find which line contains the mention
+    for (let i = 0; i < lines.length; i++) {
+      const lineEndIndex = lineStartIndex + lines[i].length;
+      if (mention.index >= lineStartIndex && mention.index <= lineEndIndex) {
+        lineContent = lines[i].trim();
+        mentionLineIndex = i;
+        break;
+      }
+      lineStartIndex = lineEndIndex + 1; // +1 for the newline character
+    }
     
-    // Create a document fragment to hold the context
+    // If line is too long, truncate around the mention but prioritize showing full sentences
+    const maxLength = 120;
+    let displayText = lineContent;
+    
+    if (lineContent.length > maxLength) {
+      const mentionInLine = mention.index - lineStartIndex + mentionText.length;
+      const start = Math.max(0, mentionInLine - maxLength / 2);
+      const end = Math.min(lineContent.length, start + maxLength);
+      
+      displayText = lineContent.substring(start, end);
+      
+      // Add ellipsis if truncated
+      if (start > 0) displayText = '...' + displayText;
+      if (end < lineContent.length) displayText = displayText + '...';
+    }
+    
+    // Create a document fragment to hold the line content
     const fragment = document.createDocumentFragment();
     
-    // Find the mention in the context
+    // Add line number if available (for code files or multi-line content)
+    if (lines.length > 1 && mentionLineIndex >= 0) {
+      const lineNumSpan = document.createElement('span');
+      lineNumSpan.classList.add('me-at-github-line-number');
+      lineNumSpan.textContent = `L${mentionLineIndex + 1}: `;
+      fragment.appendChild(lineNumSpan);
+    }
+    
+    // Find the mention in the display text and highlight it
     const mentionPattern = new RegExp(`@${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi');
     let lastIndex = 0;
-    let match;
     
-    // Split context by mentions and create text nodes and strong tags
-    const matches = [...context.matchAll(mentionPattern)];
+    // Split display text by mentions and create text nodes and strong tags
+    const matches = [...displayText.matchAll(mentionPattern)];
     
     matches.forEach((match) => {
       // Add text before the mention
       if (match.index > lastIndex) {
-        fragment.appendChild(document.createTextNode(context.substring(lastIndex, match.index)));
+        fragment.appendChild(document.createTextNode(displayText.substring(lastIndex, match.index)));
       }
       
       // Add the mention in a strong tag
@@ -651,8 +683,8 @@
     });
     
     // Add remaining text
-    if (lastIndex < context.length) {
-      fragment.appendChild(document.createTextNode(context.substring(lastIndex)));
+    if (lastIndex < displayText.length) {
+      fragment.appendChild(document.createTextNode(displayText.substring(lastIndex)));
     }
     
     return fragment;
