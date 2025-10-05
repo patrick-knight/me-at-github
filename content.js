@@ -3,7 +3,7 @@
 (function() {
   'use strict';
   
-    // Immediate console log to verify script loading\n  console.log('🚀 Me @ GitHub extension loaded!', new Date().toISOString());\n  \n  // Check if page was loaded from cache\n  if (window.performance && window.performance.navigation) {\n    const navType = window.performance.navigation.type;\n    console.log('Me @ GitHub: Navigation type:', navType);\n    if (navType === 2) { // TYPE_BACK_FORWARD\n      console.log('Me @ GitHub: Page loaded via back/forward navigation');\n    }\n  }\n  \n  // Check Performance Navigation API (modern browsers)\n  if (window.performance && window.performance.getEntriesByType) {\n    const navEntries = window.performance.getEntriesByType('navigation');\n    if (navEntries.length > 0) {\n      const navEntry = navEntries[0];\n      console.log('Me @ GitHub: Navigation entry type:', navEntry.type);\n      if (navEntry.type === 'back_forward') {\n        console.log('Me @ GitHub: Detected back/forward navigation via Performance API');\n      }\n    }\n  }"
+    console.log('🚀 Me @ GitHub extension loaded!');
 
   let username = null;
   let mentions = [];
@@ -224,17 +224,12 @@
       links.forEach(link => allLinks.add(link));
     });
     
-    console.log('Me @ GitHub: Found', allLinks.size, 'potential mention links');
-    
     allLinks.forEach((link, idx) => {
       const linkText = link.textContent.trim();
       const linkHref = link.getAttribute('href') || link.href;
       
-      console.log(`Me @ GitHub: Link ${idx + 1}: text="${linkText}", href="${linkHref}"`);
-      
       // Skip if this link is in an excluded area (title, header, etc.)
       if (isInExcludedArea(link)) {
-        console.log(`Me @ GitHub: Link ${idx + 1} is in excluded area, skipping. Parent classes:`, link.parentElement?.className);
         return;
       }
       
@@ -244,8 +239,6 @@
       const matchesHref = linkHref.endsWith(`/${username}`) || linkHref === `/${username}`;
       
       if (matchesText || matchesHref) {
-        console.log(`Me @ GitHub: Link ${idx + 1} matches current user!`);
-        
         // Find the text node inside the link
         const textNode = Array.from(link.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
         if (textNode) {
@@ -255,14 +248,9 @@
             index: 0,
             element: link
           });
-          console.log(`Me @ GitHub: Added mention from link ${idx + 1}`);
-        } else {
-          console.log(`Me @ GitHub: Link ${idx + 1} has no text node, children:`, link.childNodes);
         }
       }
     });
-    
-    console.log('Me @ GitHub: Found', mentions.length, 'mentions in user-mention links');
     
     // Then search in comment body containers for plain text mentions
     const commentBodySelectors = [
@@ -285,13 +273,10 @@
       '.js-discussion .comment-body'
     ];
     
-    let plainTextCount = 0;
     commentBodySelectors.forEach(selector => {
       const containers = document.querySelectorAll(selector);
-      console.log(`Me @ GitHub: Found ${containers.length} containers for selector "${selector}"`);
       
       containers.forEach((container, containerIdx) => {
-        console.log(`Me @ GitHub: Scanning container ${containerIdx + 1}:`, container.className, container.textContent.substring(0, 100) + '...');
         const walker = document.createTreeWalker(
           container,
           NodeFilter.SHOW_TEXT,
@@ -314,7 +299,6 @@
           
           // Skip title areas, headers, and navigation elements
           if (isInExcludedArea(node)) {
-            console.log('Me @ GitHub: Excluding text node in:', node.parentElement?.className);
             return NodeFilter.FILTER_REJECT;
           }
           
@@ -341,21 +325,16 @@
               index: match.index,
               element: node.parentElement
             });
-            plainTextCount++;
           }
         }
       });
     });
-    
-    console.log('Me @ GitHub: Found', plainTextCount, 'plain text mentions');
     
     return mentions;
   }
 
   // Highlight mentions and add navigation controls
   function highlightMentions() {
-    console.log('Me @ GitHub: Starting to highlight', mentions.length, 'mentions');
-    
     // Group mentions by their text node to process multiple mentions in the same node
     const nodeGroups = new Map();
     mentions.forEach((mention, index) => {
@@ -365,17 +344,13 @@
       nodeGroups.get(mention.node).push({ ...mention, originalIndex: index });
     });
     
-    console.log('Me @ GitHub: Grouped mentions into', nodeGroups.size, 'text nodes');
-    
     // Process each text node
-    let highlightedCount = 0;
     nodeGroups.forEach((mentionList, textNode) => {
       // Skip if already processed or if text node is polluted with navigation
       if (!textNode.parentNode || 
           textNode.parentNode.classList?.contains('me-at-github-mention-text') ||
           textNode.textContent.includes('←') || 
           textNode.textContent.includes('→')) {
-        console.log('Me @ GitHub: Skipping already processed or polluted text node');
         return;
       }
       
@@ -446,24 +421,18 @@
       
       // Replace the text node with the fragment
       textNode.parentNode.replaceChild(fragment, textNode);
-      highlightedCount++;
     });
-    
-    console.log('Me @ GitHub: Successfully highlighted', highlightedCount, 'text nodes');
-    console.log('Me @ GitHub: Total highlight elements created:', document.querySelectorAll('.me-at-github-mention-text').length);
   }
 
   // Add prev/next navigation controls to a mention
   function addNavigationControls(element, index) {
-    // Don't add navigation controls if there's only one mention or if disabled
+    // Don't add navigation controls if there's only one mention
     if (mentions.length <= 1) {
-      console.log('Me @ GitHub: Skipping navigation controls - only', mentions.length, 'mentions');
       return;
     }
     
     // Check if navigation controls already exist
     if (element.querySelector('.me-at-github-nav')) {
-      console.log('Me @ GitHub: Navigation controls already exist for mention', index + 1);
       return;
     }
     
@@ -487,13 +456,10 @@
     // Show navigation on hover or active
     const showNav = () => {
       clearTimeout(hideTimeout);
-      // Only show if we have mentions to navigate through AND navigation is enabled
+      // Only show if we have mentions to navigate through
       if (mentions.length > 1) {
         nav.style.display = 'flex';
         isNavVisible = true;
-        console.log('Me @ GitHub: Showing navigation controls for mention', index + 1, 'of', mentions.length);
-      } else {
-        console.log('Me @ GitHub: Not showing navigation - only', mentions.length, 'mentions');
       }
     };
     
@@ -549,7 +515,6 @@
   // Navigate to a specific mention
   function navigateToMention(index) {
     if (mentions.length === 0) {
-      console.log('Me @ GitHub: No mentions to navigate to');
       return false;
     }
     
@@ -562,7 +527,6 @@
     
     // Ensure index is still valid
     if (index < 0 || index >= mentions.length) {
-      console.log('Me @ GitHub: Invalid mention index:', index);
       return false;
     }
     
@@ -570,11 +534,8 @@
     const mention = mentions[index];
     
     if (!mention || !mention.element) {
-      console.log('Me @ GitHub: Invalid mention or element at index:', index);
       return false;
     }
-    
-    console.log(`Me @ GitHub: Navigating to mention ${index + 1}/${mentions.length}`);
     
     // Remove active class from all mentions
     document.querySelectorAll('.me-at-github-mention-text').forEach(el => {
@@ -591,7 +552,6 @@
         block: 'center'
       });
     } catch (error) {
-      console.log('Me @ GitHub: Error scrolling to mention:', error);
       // Fallback: try without smooth behavior
       mention.element.scrollIntoView({
         block: 'center'
@@ -606,10 +566,6 @@
     const count = mentions.length;
     if (count === 0) return;
     
-    // Log current page info for debugging
-    console.log('Me @ GitHub: Current page URL:', location.href);
-    console.log('Me @ GitHub: Page title:', document.title);
-    
     // Find the issue/PR number element first - this is our primary target
     const issueSelectors = [
       '.gh-header-number',               // Issue/PR number in header
@@ -621,23 +577,15 @@
     ];
     
     let issueNumberElement = null;
-    let selectorUsed = null;
     
-    console.log('Me @ GitHub: Looking for issue number element...');
     for (const selector of issueSelectors) {
       const elements = document.querySelectorAll(selector);
-      console.log(`Me @ GitHub: Selector "${selector}" found ${elements.length} elements`);
       
       for (const element of elements) {
         if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
-          console.log(`Me @ GitHub: Checking element with text: "${element.textContent.trim()}"`);
           // Check if it contains a # (issue/PR number)
           if (element.textContent.includes('#')) {
             issueNumberElement = element;
-            selectorUsed = selector;
-            console.log(`Me @ GitHub: ✓ Found issue number element using selector: "${selector}"`);
-            console.log(`Me @ GitHub: Element text: "${element.textContent.trim()}"`);
-            console.log(`Me @ GitHub: Element HTML:`, element.outerHTML.substring(0, 200));
             break;
           }
         }
@@ -647,31 +595,25 @@
     
     // Fallback to title element if no issue number found
     if (!issueNumberElement) {
-      console.log('Me @ GitHub: No issue number element found, falling back to title element...');
       const titleSelectors = [
-        'h1.gh-header-title',           // Most common: issue/PR title container
-        'h1.js-issue-title',            // Alternative issue title
-        'h1[data-testid="issue-title"]', // New GitHub UI
-        '[data-testid="issue-title"]',   // New GitHub UI without h1
-        'h1.d-flex',                    // GitHub's flexbox h1
-        '.gh-header-title',             // Without h1 restriction
-        'bdi.js-issue-title',           // Title text element
-        'span.js-issue-title',          // Alternative title text element
-        'main h1',                      // H1 in main content
-        'h1'                            // Last resort: any h1 on the page
+        'h1.gh-header-title',
+        'h1.js-issue-title',
+        'h1[data-testid="issue-title"]',
+        '[data-testid="issue-title"]',
+        'h1.d-flex',
+        '.gh-header-title',
+        'bdi.js-issue-title',
+        'span.js-issue-title',
+        'main h1',
+        'h1'
       ];
       
       for (const selector of titleSelectors) {
         const elements = document.querySelectorAll(selector);
-        console.log(`Me @ GitHub: Title selector "${selector}" found ${elements.length} elements`);
         
         for (const element of elements) {
           if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
             issueNumberElement = element;
-            selectorUsed = selector;
-            console.log(`Me @ GitHub: ✓ Using title element with selector: "${selector}"`);
-            console.log(`Me @ GitHub: Title element text: "${element.textContent.trim().substring(0, 100)}..."`);
-            console.log(`Me @ GitHub: Title element HTML:`, element.outerHTML.substring(0, 200));
             break;
           }
         }
@@ -680,27 +622,8 @@
     }
     
     if (!issueNumberElement) {
-      console.log('Me @ GitHub: ❌ Could not find issue number or title element');
-      console.log('Me @ GitHub: Debugging - Available h1 elements:');
-      document.querySelectorAll('h1').forEach((h1, index) => {
-        console.log(`  H1 #${index + 1}:`, h1.outerHTML.substring(0, 150));
-        console.log(`    Text: "${h1.textContent.trim().substring(0, 100)}"`);
-        console.log(`    Classes: "${h1.className}"`);
-        console.log(`    Visible: ${h1.offsetWidth > 0 && h1.offsetHeight > 0}`);
-      });
-      console.log('Me @ GitHub: Debugging - All spans with # in text:');
-      document.querySelectorAll('span').forEach((span, index) => {
-        if (span.textContent.includes('#')) {
-          console.log(`  Span #${index + 1} with #:`, span.outerHTML.substring(0, 100));
-          console.log(`    Text: "${span.textContent.trim()}"`);
-        }
-      });
       return;
     }
-    
-    console.log('Me @ GitHub: Target element tag:', issueNumberElement.tagName);
-    console.log('Me @ GitHub: Target element classes:', issueNumberElement.className);
-    console.log('Me @ GitHub: Target element HTML:', issueNumberElement.outerHTML.substring(0, 200));
     
     // Create counter badge
     const counter = document.createElement('span');
@@ -735,11 +658,9 @@
     
     // Insert the counter after the target element
     issueNumberElement.parentNode.insertBefore(counter, issueNumberElement.nextSibling);
-    console.log('Me @ GitHub: Counter badge inserted after target element');
     
     // Create dropdown
     createDropdown(counter);
-    console.log('Me @ GitHub: Dropdown created');
     
     // Create sticky header counter
     createStickyCounter(count);
@@ -766,10 +687,7 @@
       e.preventDefault();
       // Scroll to first mention when clicked
       if (mentions.length > 0) {
-        const success = navigateToMention(0);
-        if (!success) {
-          console.log('Me @ GitHub: Sticky counter navigation failed');
-        }
+        navigateToMention(0);
       }
     });
     
@@ -837,14 +755,12 @@
       
       // Get context as DocumentFragment with proper text nodes and strong tags
       const contextFragment = createContextElement(mention);
-      console.log('Me @ GitHub: Created context fragment:', contextFragment, 'for mention:', mention);
       
       if (contextFragment && contextFragment.childNodes.length > 0) {
         contextSpan.appendChild(contextFragment);
       } else {
         // Fallback if no context could be created
         contextSpan.textContent = `Mention #${index + 1}: @${username}`;
-        console.log('Me @ GitHub: Using fallback context for mention', index + 1);
       }
       
       li.appendChild(indexSpan);
@@ -877,8 +793,6 @@
   function createContextElement(mention) {
     let fullText = mention.text || '';
     const mentionText = `@${username}`;
-    
-    console.log('Me @ GitHub: Creating context for mention:', mention);
     
     // Try to get better context from the element
     let contextText = fullText;
@@ -1058,7 +972,6 @@
       const computedZIndex = parseInt(window.getComputedStyle(dropdown).zIndex);
       
       if (!isVisible || computedZIndex < 1000000) {
-        console.log('Me @ GitHub: Dropdown may be hidden, creating body-level portal...');
         createBodyPortalDropdown(counter, dropdown);
       }
     }, 100);
@@ -1121,8 +1034,6 @@
         }
       });
     }, 0);
-    
-    console.log('Me @ GitHub: Created body-level dropdown portal');
   }
   
   // Ensure dropdown has maximum z-index to appear above all GitHub elements
@@ -1159,19 +1070,13 @@
     
     githubElements.forEach(element => {
       const zIndex = parseInt(window.getComputedStyle(element).zIndex);
-      if (!isNaN(zIndex)) {
-        console.log(`Me @ GitHub: Found GitHub element with z-index ${zIndex}:`, element.className);
-        if (zIndex >= maxZIndex) {
-          maxZIndex = zIndex + 1;
-        }
+      if (!isNaN(zIndex) && zIndex >= maxZIndex) {
+        maxZIndex = zIndex + 1;
       }
     });
     
     const finalZIndex = Math.min(maxZIndex, 2147483647).toString();
     dropdown.style.zIndex = finalZIndex;
-    
-    console.log('Me @ GitHub: Set dropdown z-index to', finalZIndex);
-    console.log('Me @ GitHub: Dropdown element:', dropdown);
   }
   
   // Position dropdown to stay within viewport bounds
@@ -1273,13 +1178,11 @@
     allElements.forEach(element => {
       // Check for exact raw navigation patterns
       if (element.textContent && element.textContent.match(/^[←→]?\s*\d+\/\d+\s*[←→]?$/)) {
-        console.log('Me @ GitHub: Removing raw navigation text:', element.textContent, 'from', element.tagName);
         element.remove();
       }
       
       // Check for links that contain navigation text mixed with usernames
       if (element.tagName === 'A' && element.textContent.includes('←') && element.textContent.includes('→') && element.textContent.includes('/')) {
-        console.log('Me @ GitHub: Cleaning polluted link text:', element.textContent);
         // Extract just the username part
         const cleanText = element.textContent.replace(/[←→\s\d\/]/g, '').replace(/^@/, '@');
         if (cleanText.startsWith('@')) {
@@ -1291,10 +1194,6 @@
 
   // Initialize the extension
   function init() {
-    console.log('Me @ GitHub: Initializing on', location.href);
-    console.log('Me @ GitHub: Page readyState:', document.readyState);
-    console.log('Me @ GitHub: DOM content loaded:', document.body ? 'Yes' : 'No');
-    
     // Verify we're on a supported page
     const supportedPagePatterns = [
       /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,  // Repository pages
@@ -1304,24 +1203,7 @@
     
     const isSupported = supportedPagePatterns.some(pattern => pattern.test(location.href));
     if (!isSupported) {
-      console.log('Me @ GitHub: Not on a supported page type, skipping initialization');
-      console.log('Me @ GitHub: Current URL:', location.href);
       return;
-    }
-    
-    console.log('Me @ GitHub: Supported page detected');
-    
-    // Log which pattern matched for debugging
-    if (/github\.com\/orgs\/[^/]+\/discussions\//.test(location.href)) {
-      console.log('Me @ GitHub: Detected organization discussion page');
-    } else if (/github\.com\/[^/]+\/[^/]+\/discussions\//.test(location.href)) {
-      console.log('Me @ GitHub: Detected repository discussion page');
-    } else if (/github\.com\/[^/]+\/[^/]+\/pull\//.test(location.href)) {
-      console.log('Me @ GitHub: Detected pull request page');
-    } else if (/github\.com\/[^/]+\/[^/]+\/issues\//.test(location.href)) {
-      console.log('Me @ GitHub: Detected issue page');
-    } else {
-      console.log('Me @ GitHub: Detected other GitHub page');
     }
     
     // Clean up any previous initialization
@@ -1330,28 +1212,20 @@
     // Pre-cleanup: Remove any polluted navigation text from links
     document.querySelectorAll('a').forEach(link => {
       if (link.textContent && (link.textContent.includes('←') || link.textContent.includes('→')) && link.textContent.includes('/')) {
-        console.log('Me @ GitHub: Pre-cleanup: Found polluted link:', link.textContent);
         const cleanText = link.textContent.replace(/\s*[←→]\s*/g, '').replace(/\s*\d+\/\d+\s*/g, '').trim();
         if (cleanText.startsWith('@') && cleanText.length > 1) {
           link.textContent = cleanText;
-          console.log('Me @ GitHub: Pre-cleanup: Cleaned to:', cleanText);
         }
       }
     });
     
     username = getUsername();
     if (!username) {
-      console.log('Me @ GitHub: Could not detect username');
-      console.log('Me @ GitHub: Checked meta[name="user-login"]:', document.querySelector('meta[name="user-login"]'));
-      console.log('Me @ GitHub: Checked [data-login]:', document.querySelector('[data-login]'));
       return;
     }
     
-    console.log('Me @ GitHub: Detected username:', username);
-    
     // Find all mentions
     mentions = findMentions();
-    console.log('Me @ GitHub: Found', mentions.length, 'mentions');
     
     if (mentions.length > 0) {
       // Initialize mention index
@@ -1364,24 +1238,8 @@
       
       // Create counter
       createCounter();
-      
-      // Verify UI elements are still in DOM after a short delay
-      setTimeout(() => {
-        const counters = document.querySelectorAll('.me-at-github-counter');
-        const highlights = document.querySelectorAll('.me-at-github-mention-text');
-        console.log('Me @ GitHub: Post-init verification:');
-        console.log('  - Counter elements in DOM:', counters.length);
-        console.log('  - Highlight elements in DOM:', highlights.length);
-        if (counters.length > 0) {
-          const counter = counters[0];
-          console.log('  - Counter visible:', counter.offsetWidth > 0 && counter.offsetHeight > 0);
-          console.log('  - Counter display:', window.getComputedStyle(counter).display);
-          console.log('  - Counter position in DOM:', counter.parentElement?.tagName, counter.parentElement?.className);
-        }
-      }, 100);
       return true; // Success
     } else {
-      console.log('Me @ GitHub: No mentions found to highlight');
       return false; // No mentions found
     }
   }
@@ -1404,60 +1262,45 @@
     if (e.altKey && e.key === 'n') {
       e.preventDefault();
       e.stopPropagation();
-      const success = navigateToMention(currentMentionIndex + 1);
-      if (!success) {
-        console.log('Me @ GitHub: Navigation failed, preventing default behavior');
-      }
+      navigateToMention(currentMentionIndex + 1);
     }
     // Alt+P for previous mention
     else if (e.altKey && e.key === 'p') {
       e.preventDefault();
       e.stopPropagation();
-      const success = navigateToMention(currentMentionIndex - 1);
-      if (!success) {
-        console.log('Me @ GitHub: Navigation failed, preventing default behavior');
-      }
+      navigateToMention(currentMentionIndex - 1);
     }
   }
 
   // Run when DOM is ready with multiple initialization attempts
   function initializeWithRetry(attempt = 1, maxAttempts = 5) {
-    console.log(`Me @ GitHub: Initialization attempt ${attempt}/${maxAttempts}`);
-    console.log(`Me @ GitHub: Current URL: ${location.href}`);
-    console.log(`Me @ GitHub: Document ready state: ${document.readyState}`);
-    
     if (attempt > maxAttempts) {
-      console.log('Me @ GitHub: Max initialization attempts reached');
       return;
     }
     
     // Check if we're still on a supported page
     const supportedPagePatterns = [
-      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,  // Repository pages
-      /github\.com\/orgs\/[^/]+\/discussions\//,                    // Organization discussions
-      /github\.com\/[^/]+\/[^/]+\/discussions\//                   // Repository discussions (alternative pattern)
+      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,
+      /github\.com\/orgs\/[^/]+\/discussions\//,
+      /github\.com\/[^/]+\/[^/]+\/discussions\//
     ];
     
     const isSupported = supportedPagePatterns.some(pattern => pattern.test(location.href));
     if (!isSupported) {
-      console.log('Me @ GitHub: Not on supported page, skipping initialization');
-      console.log('Me @ GitHub: Current URL:', location.href);
       return;
     }
     
     // Try to initialize
-    const success = init();
+    init();
     
     // If no mentions found and we haven't reached max attempts, try again
     if (mentions.length === 0 && attempt < maxAttempts) {
-      console.log(`Me @ GitHub: No mentions found on attempt ${attempt}, retrying in ${1000 * attempt}ms...`);
       setTimeout(() => initializeWithRetry(attempt + 1, maxAttempts), 1000 * attempt);
     }
   }
   
   // Force re-initialization function (exposed globally for debugging)
   window.meAtGitHubReinit = function() {
-    console.log('Me @ GitHub: Force re-initialization requested');
     cleanup();
     setTimeout(() => initializeWithRetry(), 100);
   };
@@ -1465,21 +1308,16 @@
   // Run when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      console.log('Me @ GitHub: DOMContentLoaded event fired');
       setTimeout(() => initializeWithRetry(), 1000);
     });
   } else {
-    console.log('Me @ GitHub: Document already ready');
-    // Add a delay to ensure GitHub's dynamic content is loaded
     setTimeout(() => initializeWithRetry(), 1000);
   }
   
   // Additional initialization on page load (for cached pages)
   window.addEventListener('load', () => {
-    console.log('Me @ GitHub: Window load event fired');
     const existingCounter = document.querySelector('.me-at-github-counter');
     if (!existingCounter) {
-      console.log('Me @ GitHub: No counter found on load, initializing...');
       setTimeout(() => initializeWithRetry(), 500);
     }
   });
@@ -1489,16 +1327,12 @@
 
   // Listen for browser navigation (forward/back buttons)
   window.addEventListener('popstate', () => {
-    console.log('Me @ GitHub: Browser navigation detected (popstate), re-initializing...');
     setTimeout(() => initializeWithRetry(), 1000);
   });
   
   // Listen for page show event (handles cached page returns)
   window.addEventListener('pageshow', (event) => {
-    console.log('Me @ GitHub: Page show detected, persisted:', event.persisted);
     if (event.persisted) {
-      // Page was loaded from cache (back/forward navigation)
-      console.log('Me @ GitHub: Page loaded from cache, re-initializing...');
       setTimeout(() => initializeWithRetry(), 500);
     }
   });
@@ -1506,12 +1340,9 @@
   // Listen for visibility changes (tab becomes active)
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-      console.log('Me @ GitHub: Page became visible, checking if extension needs initialization...');
-      // Only re-initialize if we don't have any mentions or counters
       const existingCounter = document.querySelector('.me-at-github-counter');
       const existingMentions = document.querySelectorAll('.me-at-github-mention-text');
       if (!existingCounter && existingMentions.length === 0) {
-        console.log('Me @ GitHub: No existing extension elements found, re-initializing...');
         setTimeout(() => initializeWithRetry(), 1000);
       }
     }
@@ -1519,10 +1350,8 @@
   
   // Listen for window focus (browser becomes active)
   window.addEventListener('focus', () => {
-    console.log('Me @ GitHub: Window focused, checking extension state...');
     const existingCounter = document.querySelector('.me-at-github-counter');
     if (!existingCounter && mentions.length > 0) {
-      console.log('Me @ GitHub: Extension elements missing but mentions exist, re-initializing...');
       setTimeout(() => initializeWithRetry(), 500);
     }
   });
@@ -1533,19 +1362,16 @@
   
   history.pushState = function() {
     originalPushState.apply(history, arguments);
-    console.log('Me @ GitHub: Programmatic navigation detected (pushState), re-initializing...');
     setTimeout(() => initializeWithRetry(), 1000);
   };
   
   history.replaceState = function() {
     originalReplaceState.apply(history, arguments);
-    console.log('Me @ GitHub: Programmatic navigation detected (replaceState), re-initializing...');
     setTimeout(() => initializeWithRetry(), 1000);
   };
   
   // Listen for hash changes (single-page navigation)
   window.addEventListener('hashchange', () => {
-    console.log('Me @ GitHub: Hash change detected, re-initializing...');
     setTimeout(() => initializeWithRetry(), 500);
   });
   
@@ -1554,8 +1380,6 @@
   const observer = new MutationObserver((mutations) => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
-      console.log('Me @ GitHub: Page navigation detected, re-initializing...');
-      // Re-initialize after navigation with retry logic
       setTimeout(() => initializeWithRetry(), 1500);
       return;
     }
@@ -1581,7 +1405,6 @@
     }
     
     if (shouldRehighlight && username) {
-      console.log('Me @ GitHub: New content detected, re-highlighting mentions');
       // Re-find and highlight mentions after a short delay
       setTimeout(() => {
         // Find new mentions without cleaning up existing ones first
@@ -1622,10 +1445,9 @@
   setInterval(() => {
     if (location.href !== currentUrl) {
       currentUrl = location.href;
-      console.log('Me @ GitHub: URL change detected via periodic check, re-initializing...');
       setTimeout(() => initializeWithRetry(), 500);
     }
-  }, 2000); // Check every 2 seconds
+  }, 2000);
   
   // Health check: ensure extension is active on supported pages
   setInterval(() => {
@@ -1642,71 +1464,24 @@
       const hasUsername = bodyText.includes(`@${username || 'unknown'}`);
       
       if (!existingCounter && hasUsername && username) {
-        console.log('Me @ GitHub: Health check - extension should be active but counter missing, re-initializing...');
         setTimeout(() => initializeWithRetry(), 1000);
       }
     }
-  }, 10000); // Check every 10 seconds
+  }, 10000);
 
   // Expose force initialization function for debugging
   window.meAtGitHubForceInit = function() {
-    console.log('Me @ GitHub: Force initialization requested');
-    initializeWithRetry(1, 1); // Single attempt
+    initializeWithRetry(1, 1);
   };
   
   // Expose diagnostic function for debugging
   window.meAtGitHubDiagnostics = function() {
     console.log('=== Me @ GitHub Diagnostics ===');
-    console.log('Extension State:');
-    console.log('  - Username:', username || 'NOT SET');
-    console.log('  - Mentions found:', mentions.length);
-    console.log('  - Current mention index:', currentMentionIndex);
-    console.log('');
-    console.log('DOM Elements:');
-    console.log('  - Counter elements:', document.querySelectorAll('.me-at-github-counter').length);
-    console.log('  - Highlight elements:', document.querySelectorAll('.me-at-github-mention-text').length);
-    console.log('  - Dropdown elements:', document.querySelectorAll('.me-at-github-dropdown').length);
-    console.log('');
-    
-    const counter = document.querySelector('.me-at-github-counter');
-    if (counter) {
-      console.log('Counter Element:');
-      console.log('  - Exists: YES');
-      console.log('  - Visible:', counter.offsetWidth > 0 && counter.offsetHeight > 0);
-      console.log('  - Display:', window.getComputedStyle(counter).display);
-      console.log('  - Visibility:', window.getComputedStyle(counter).visibility);
-      console.log('  - Opacity:', window.getComputedStyle(counter).opacity);
-      console.log('  - Parent:', counter.parentElement?.tagName, counter.parentElement?.className);
-      console.log('  - Position:', counter.getBoundingClientRect());
-    } else {
-      console.log('Counter Element: NOT FOUND');
-    }
-    console.log('');
-    
-    console.log('Title Element Check:');
-    const selectors = [
-      'h1.gh-header-title',
-      'h1.js-issue-title',
-      'h1[data-testid="issue-title"]',
-      '.gh-header-title',
-      'bdi.js-issue-title',
-      'span.js-issue-title',
-      'h1'
-    ];
-    selectors.forEach(selector => {
-      const el = document.querySelector(selector);
-      if (el) {
-        console.log(`  - ${selector}: FOUND (${el.tagName}, visible: ${el.offsetWidth > 0 && el.offsetHeight > 0})`);
-      } else {
-        console.log(`  - ${selector}: not found`);
-      }
-    });
-    console.log('');
-    console.log('To manually re-initialize, run: location.reload()');
+    console.log('Username:', username || 'NOT SET');
+    console.log('Mentions found:', mentions.length);
+    console.log('Counter elements:', document.querySelectorAll('.me-at-github-counter').length);
+    console.log('Highlight elements:', document.querySelectorAll('.me-at-github-mention-text').length);
     console.log('===============================');
   };
-  
-  console.log('Me @ GitHub: Diagnostics function available. Run meAtGitHubDiagnostics() to check extension state.');
-  console.log('Me @ GitHub: Force init function available. Run meAtGitHubForceInit() to force re-initialization.');
 
 })();
