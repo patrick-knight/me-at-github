@@ -30,7 +30,26 @@
     
     const mentions = [];
     
-    // Search in all text nodes
+    // First, find GitHub's native user mention links
+    const mentionLinks = document.querySelectorAll('a.user-mention');
+    mentionLinks.forEach(link => {
+      const linkText = link.textContent.trim();
+      // Check if this link mentions the current user
+      if (linkText === `@${username}` || link.href.endsWith(`/${username}`)) {
+        // Find the text node inside the link
+        const textNode = Array.from(link.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+        if (textNode) {
+          mentions.push({
+            node: textNode,
+            text: textNode.textContent,
+            index: 0,
+            element: link
+          });
+        }
+      }
+    });
+    
+    // Then search in all other text nodes for plain text mentions
     const walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
@@ -42,7 +61,8 @@
               parent.tagName === 'SCRIPT' || 
               parent.tagName === 'STYLE' ||
               parent.classList.contains('me-at-github-counter') ||
-              parent.classList.contains('me-at-github-dropdown')) {
+              parent.classList.contains('me-at-github-dropdown') ||
+              parent.classList.contains('user-mention')) {  // Skip GitHub's mention links (already processed)
             return NodeFilter.FILTER_REJECT;
           }
           
@@ -93,6 +113,32 @@
         return;
       }
       
+      const parent = textNode.parentNode;
+      
+      // Special handling for GitHub's native mention links
+      if (parent.classList && parent.classList.contains('user-mention')) {
+        // Wrap the entire link in our highlight span
+        const mentionSpan = document.createElement('span');
+        mentionSpan.classList.add('me-at-github-mention-text');
+        mentionSpan.classList.add('me-at-github-link-wrapper');
+        
+        // Get the index for this mention
+        const index = mentionList[0].originalIndex;
+        mentionSpan.setAttribute('data-mention-index', index);
+        
+        // Move the link inside our span
+        parent.parentNode.insertBefore(mentionSpan, parent);
+        mentionSpan.appendChild(parent);
+        
+        // Update the mention reference
+        mentions[index].element = mentionSpan;
+        
+        // Add navigation controls
+        addNavigationControls(mentionSpan, index);
+        return;
+      }
+      
+      // Handle plain text mentions
       const text = textNode.textContent;
       const mentionText = `@${username}`;
       const fragment = document.createDocumentFragment();
@@ -198,15 +244,30 @@
     if (count === 0) return;
     
     // Find the page title - try multiple selectors for different GitHub layouts
-    const titleElement = document.querySelector(
-      '.gh-header-title, .js-issue-title, h1.js-issue-title, ' +
-      'bdi.js-issue-title, h1[data-testid="issue-title"], ' +
-      '.gh-header-title .js-issue-title'
+    // Try to find the specific title content element first, then fall back to container
+    let titleElement = document.querySelector(
+      'h1.gh-header-title .js-issue-title, ' +
+      'h1.gh-header-title bdi.js-issue-title, ' +
+      'h1.gh-header-title span.js-issue-title, ' +
+      'bdi.js-issue-title, ' +
+      'span.js-issue-title, ' +
+      'h1.gh-header-title, ' +
+      'h1.js-issue-title, ' +
+      'h1[data-testid="issue-title"]'
     );
+    
+    // If we found a child element (bdi/span), use its parent h1 instead
+    if (titleElement && (titleElement.tagName === 'BDI' || titleElement.tagName === 'SPAN')) {
+      titleElement = titleElement.closest('h1') || titleElement;
+    }
+    
     if (!titleElement) {
       console.log('Me @ GitHub: Could not find title element');
+      console.log('Me @ GitHub: Available h1 elements:', document.querySelectorAll('h1'));
       return;
     }
+    
+    console.log('Me @ GitHub: Found title element:', titleElement);
     
     // Create counter badge
     const counter = document.createElement('span');
@@ -340,8 +401,17 @@
     // Remove existing highlights
     document.querySelectorAll('.me-at-github-mention-text').forEach(el => {
       const parent = el.parentNode;
-      if (parent) {
-        // Replace with plain text
+      if (!parent) return;
+      
+      // Special handling for link wrappers - unwrap the link
+      if (el.classList.contains('me-at-github-link-wrapper')) {
+        const link = el.querySelector('a.user-mention');
+        if (link) {
+          parent.insertBefore(link, el);
+        }
+        el.remove();
+      } else {
+        // Replace with plain text for plain text mentions
         const textNode = document.createTextNode(el.textContent);
         parent.replaceChild(textNode, el);
       }
@@ -350,12 +420,16 @@
 
   // Initialize the extension
   function init() {
+    console.log('Me @ GitHub: Initializing on', location.href);
+    
     // Clean up any previous initialization
     cleanup();
     
     username = getUsername();
     if (!username) {
       console.log('Me @ GitHub: Could not detect username');
+      console.log('Me @ GitHub: Checked meta[name="user-login"]:', document.querySelector('meta[name="user-login"]'));
+      console.log('Me @ GitHub: Checked [data-login]:', document.querySelector('[data-login]'));
       return;
     }
     
@@ -371,6 +445,8 @@
       
       // Create counter
       createCounter();
+    } else {
+      console.log('Me @ GitHub: No mentions found to highlight');
     }
   }
 
@@ -415,8 +491,8 @@
   const observer = new MutationObserver(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
-      // Re-initialize after navigation
-      setTimeout(init, 500);
+      // Re-initialize after navigation with longer delay to ensure page is fully loaded
+      setTimeout(init, 1000);
     }
   });
   
