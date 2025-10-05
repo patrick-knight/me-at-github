@@ -326,8 +326,12 @@
     // Process each text node
     let highlightedCount = 0;
     nodeGroups.forEach((mentionList, textNode) => {
-      // Skip if already processed
-      if (!textNode.parentNode || textNode.parentNode.classList?.contains('me-at-github-mention-text')) {
+      // Skip if already processed or if text node is polluted with navigation
+      if (!textNode.parentNode || 
+          textNode.parentNode.classList?.contains('me-at-github-mention-text') ||
+          textNode.textContent.includes('←') || 
+          textNode.textContent.includes('→')) {
+        console.log('Me @ GitHub: Skipping already processed or polluted text node');
         return;
       }
       
@@ -409,6 +413,13 @@
   function addNavigationControls(element, index) {
     // Don't add navigation controls if there's only one mention or if disabled
     if (mentions.length <= 1) {
+      console.log('Me @ GitHub: Skipping navigation controls - only', mentions.length, 'mentions');
+      return;
+    }
+    
+    // Check if navigation controls already exist
+    if (element.querySelector('.me-at-github-nav')) {
+      console.log('Me @ GitHub: Navigation controls already exist for mention', index + 1);
       return;
     }
     
@@ -803,7 +814,7 @@
 
   // Get line content where the mention appears and create DOM nodes
   function createContextElement(mention) {
-    const fullText = mention.text || '';
+    let fullText = mention.text || '';
     const mentionText = `@${username}`;
     
     console.log('Me @ GitHub: Creating context for mention:', mention);
@@ -1177,9 +1188,20 @@
     // Remove any raw navigation text that might be lingering
     const allElements = document.querySelectorAll('*');
     allElements.forEach(element => {
+      // Check for exact raw navigation patterns
       if (element.textContent && element.textContent.match(/^[←→]?\s*\d+\/\d+\s*[←→]?$/)) {
         console.log('Me @ GitHub: Removing raw navigation text:', element.textContent, 'from', element.tagName);
         element.remove();
+      }
+      
+      // Check for links that contain navigation text mixed with usernames
+      if (element.tagName === 'A' && element.textContent.includes('←') && element.textContent.includes('→') && element.textContent.includes('/')) {
+        console.log('Me @ GitHub: Cleaning polluted link text:', element.textContent);
+        // Extract just the username part
+        const cleanText = element.textContent.replace(/[←→\s\d\/]/g, '').replace(/^@/, '@');
+        if (cleanText.startsWith('@')) {
+          element.textContent = cleanText;
+        }
       }
     });
   }
@@ -1199,6 +1221,18 @@
     
     // Clean up any previous initialization
     cleanup();
+    
+    // Pre-cleanup: Remove any polluted navigation text from links
+    document.querySelectorAll('a').forEach(link => {
+      if (link.textContent && (link.textContent.includes('←') || link.textContent.includes('→')) && link.textContent.includes('/')) {
+        console.log('Me @ GitHub: Pre-cleanup: Found polluted link:', link.textContent);
+        const cleanText = link.textContent.replace(/\s*[←→]\s*/g, '').replace(/\s*\d+\/\d+\s*/g, '').trim();
+        if (cleanText.startsWith('@') && cleanText.length > 1) {
+          link.textContent = cleanText;
+          console.log('Me @ GitHub: Pre-cleanup: Cleaned to:', cleanText);
+        }
+      }
+    });
     
     username = getUsername();
     if (!username) {
