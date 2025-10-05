@@ -2,12 +2,12 @@
 
 /* Counter badge */
 .me-at-github-counter {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   margin-left: 12px;
   padding: 4px 10px;
-  background: #0969da;
-  color: white;
+  background: #0969da !important;
+  color: white !important;
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
@@ -15,6 +15,7 @@
   position: relative;
   transition: background 0.2s ease;
   vertical-align: middle;
+  z-index: 1;
 }
 
 .me-at-github-counter:hover {
@@ -85,13 +86,13 @@
 
 /* Mention highlighting */
 .me-at-github-mention {
-  display: inline;
+  display: inline !important;
 }
 
 .me-at-github-mention-text {
   position: relative;
-  display: inline;
-  background: #ddf4ff;
+  display: inline !important;
+  background: #ddf4ff !important;
   padding: 2px 4px;
   border-radius: 3px;
   transition: background 0.2s ease;

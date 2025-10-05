@@ -135,6 +135,8 @@
 
   // Highlight mentions and add navigation controls
   function highlightMentions() {
+    console.log('Me @ GitHub: Starting to highlight', mentions.length, 'mentions');
+    
     // Group mentions by their text node to process multiple mentions in the same node
     const nodeGroups = new Map();
     mentions.forEach((mention, index) => {
@@ -144,7 +146,10 @@
       nodeGroups.get(mention.node).push({ ...mention, originalIndex: index });
     });
     
+    console.log('Me @ GitHub: Grouped mentions into', nodeGroups.size, 'text nodes');
+    
     // Process each text node
+    let highlightedCount = 0;
     nodeGroups.forEach((mentionList, textNode) => {
       // Skip if already processed
       if (!textNode.parentNode || textNode.parentNode.classList?.contains('me-at-github-mention-text')) {
@@ -173,6 +178,7 @@
         
         // Add navigation controls
         addNavigationControls(mentionSpan, index);
+        highlightedCount++;
         return;
       }
       
@@ -217,7 +223,11 @@
       
       // Replace the text node with the fragment
       textNode.parentNode.replaceChild(fragment, textNode);
+      highlightedCount++;
     });
+    
+    console.log('Me @ GitHub: Successfully highlighted', highlightedCount, 'text nodes');
+    console.log('Me @ GitHub: Total highlight elements created:', document.querySelectorAll('.me-at-github-mention-text').length);
   }
 
   // Add prev/next navigation controls to a mention
@@ -282,30 +292,43 @@
     if (count === 0) return;
     
     // Find the page title - try multiple selectors for different GitHub layouts
-    // Try to find the specific title content element first, then fall back to container
-    let titleElement = document.querySelector(
-      'h1.gh-header-title .js-issue-title, ' +
-      'h1.gh-header-title bdi.js-issue-title, ' +
-      'h1.gh-header-title span.js-issue-title, ' +
-      'bdi.js-issue-title, ' +
-      'span.js-issue-title, ' +
-      'h1.gh-header-title, ' +
-      'h1.js-issue-title, ' +
-      'h1[data-testid="issue-title"]'
-    );
+    // Start with more specific selectors and fall back to general ones
+    const selectors = [
+      'h1.gh-header-title',           // Most common: issue/PR title container
+      'h1.js-issue-title',            // Alternative issue title
+      'h1[data-testid="issue-title"]', // New GitHub UI
+      '.gh-header-title',             // Without h1 restriction
+      'bdi.js-issue-title',           // Title text element
+      'span.js-issue-title',          // Alternative title text element
+      'h1'                            // Last resort: any h1 on the page
+    ];
     
-    // If we found a child element (bdi/span), use its parent h1 instead
-    if (titleElement && (titleElement.tagName === 'BDI' || titleElement.tagName === 'SPAN')) {
-      titleElement = titleElement.closest('h1') || titleElement;
+    let titleElement = null;
+    let selectorUsed = null;
+    
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+      // Verify element is visible and in the document
+      if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
+        titleElement = element;
+        selectorUsed = selector;
+        console.log(`Me @ GitHub: Found visible title element using selector: "${selector}"`);
+        break;
+      } else if (element) {
+        console.log(`Me @ GitHub: Found title element with selector "${selector}" but it's not visible (w:${element.offsetWidth}, h:${element.offsetHeight})`);
+      }
     }
     
     if (!titleElement) {
-      console.log('Me @ GitHub: Could not find title element');
+      console.log('Me @ GitHub: Could not find title element with any selector');
       console.log('Me @ GitHub: Available h1 elements:', document.querySelectorAll('h1'));
+      console.log('Me @ GitHub: Page body classes:', document.body.className);
       return;
     }
     
-    console.log('Me @ GitHub: Found title element:', titleElement);
+    console.log('Me @ GitHub: Title element tag:', titleElement.tagName);
+    console.log('Me @ GitHub: Title element classes:', titleElement.className);
+    console.log('Me @ GitHub: Title element HTML:', titleElement.outerHTML.substring(0, 200));
     
     // Create counter badge
     const counter = document.createElement('span');
@@ -319,11 +342,17 @@
       toggleDropdown(counter);
     });
     
-    // Insert after the title
+    // Insert the counter as a child of the title element (at the end)
+    // This ensures it appears inline with the title text
     titleElement.appendChild(counter);
+    console.log('Me @ GitHub: Counter badge inserted as child of title element');
+    console.log('Me @ GitHub: Counter element:', counter);
+    console.log('Me @ GitHub: Counter is visible:', counter.offsetWidth > 0 && counter.offsetHeight > 0);
+    console.log('Me @ GitHub: Counter computed style:', window.getComputedStyle(counter).display);
     
     // Create dropdown
     createDropdown(counter);
+    console.log('Me @ GitHub: Dropdown created');
   }
 
   // Create the dropdown menu
@@ -483,6 +512,21 @@
       
       // Create counter
       createCounter();
+      
+      // Verify UI elements are still in DOM after a short delay
+      setTimeout(() => {
+        const counters = document.querySelectorAll('.me-at-github-counter');
+        const highlights = document.querySelectorAll('.me-at-github-mention-text');
+        console.log('Me @ GitHub: Post-init verification:');
+        console.log('  - Counter elements in DOM:', counters.length);
+        console.log('  - Highlight elements in DOM:', highlights.length);
+        if (counters.length > 0) {
+          const counter = counters[0];
+          console.log('  - Counter visible:', counter.offsetWidth > 0 && counter.offsetHeight > 0);
+          console.log('  - Counter display:', window.getComputedStyle(counter).display);
+          console.log('  - Counter position in DOM:', counter.parentElement?.tagName, counter.parentElement?.className);
+        }
+      }, 100);
     } else {
       console.log('Me @ GitHub: No mentions found to highlight');
     }
@@ -516,10 +560,10 @@
 
   // Run when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 500));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 1000));
   } else {
-    // Add a small delay to ensure GitHub's dynamic content is loaded
-    setTimeout(init, 500);
+    // Add a delay to ensure GitHub's dynamic content is loaded
+    setTimeout(init, 1000);
   }
 
   // Setup keyboard shortcuts once (no cleanup needed as it's a single global handler)
@@ -531,7 +575,7 @@
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       // Re-initialize after navigation with longer delay to ensure page is fully loaded
-      setTimeout(init, 1000);
+      setTimeout(init, 1500);
     }
   });
   
@@ -539,5 +583,59 @@
     childList: true,
     subtree: true
   });
+
+  // Expose diagnostic function for debugging
+  window.meAtGitHubDiagnostics = function() {
+    console.log('=== Me @ GitHub Diagnostics ===');
+    console.log('Extension State:');
+    console.log('  - Username:', username || 'NOT SET');
+    console.log('  - Mentions found:', mentions.length);
+    console.log('  - Current mention index:', currentMentionIndex);
+    console.log('');
+    console.log('DOM Elements:');
+    console.log('  - Counter elements:', document.querySelectorAll('.me-at-github-counter').length);
+    console.log('  - Highlight elements:', document.querySelectorAll('.me-at-github-mention-text').length);
+    console.log('  - Dropdown elements:', document.querySelectorAll('.me-at-github-dropdown').length);
+    console.log('');
+    
+    const counter = document.querySelector('.me-at-github-counter');
+    if (counter) {
+      console.log('Counter Element:');
+      console.log('  - Exists: YES');
+      console.log('  - Visible:', counter.offsetWidth > 0 && counter.offsetHeight > 0);
+      console.log('  - Display:', window.getComputedStyle(counter).display);
+      console.log('  - Visibility:', window.getComputedStyle(counter).visibility);
+      console.log('  - Opacity:', window.getComputedStyle(counter).opacity);
+      console.log('  - Parent:', counter.parentElement?.tagName, counter.parentElement?.className);
+      console.log('  - Position:', counter.getBoundingClientRect());
+    } else {
+      console.log('Counter Element: NOT FOUND');
+    }
+    console.log('');
+    
+    console.log('Title Element Check:');
+    const selectors = [
+      'h1.gh-header-title',
+      'h1.js-issue-title',
+      'h1[data-testid="issue-title"]',
+      '.gh-header-title',
+      'bdi.js-issue-title',
+      'span.js-issue-title',
+      'h1'
+    ];
+    selectors.forEach(selector => {
+      const el = document.querySelector(selector);
+      if (el) {
+        console.log(`  - ${selector}: FOUND (${el.tagName}, visible: ${el.offsetWidth > 0 && el.offsetHeight > 0})`);
+      } else {
+        console.log(`  - ${selector}: not found`);
+      }
+    });
+    console.log('');
+    console.log('To manually re-initialize, run: location.reload()');
+    console.log('===============================');
+  };
+  
+  console.log('Me @ GitHub: Diagnostics function available. Run meAtGitHubDiagnostics() to check extension state.');
 
 })();
