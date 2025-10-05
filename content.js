@@ -141,7 +141,17 @@
           'DiscussionCommentViewer-module__DiscussionCommentBody',
           'discussion-comment-body',
           'js-discussion-comment-body',
-          'js-comment-container'
+          'js-comment-container',
+          // PR-specific classes
+          'js-comment-text',
+          'review-comment-contents',
+          'js-review-comment-contents',
+          'js-suggested-changes-blob',
+          'js-file-line-container',
+          'js-timeline-item',
+          'js-discussion',
+          'pull-request-review-comment',
+          'timeline-comment-wrapper'
         ];
         
         for (const allowedClass of allowedClasses) {
@@ -164,6 +174,10 @@
           className.includes('IssueItem-module') ||
           className.includes('navigation') ||
           className.includes('title') ||
+          className.includes('comment-reactions') ||
+          className.includes('social-reactions') ||
+          className.includes('reactions-container') ||
+          className.includes('js-reaction-buttons') ||
           element.closest && element.closest('[class*="ActivityHeader"]')) {
         return true;
       }
@@ -248,7 +262,17 @@
       '[class*="IssueCommentViewer-module__IssueCommentBody"]',
       '[class*="DiscussionCommentViewer-module__DiscussionCommentBody"]',
       '.discussion-comment-body',
-      '.js-discussion-comment-body'
+      '.js-discussion-comment-body',
+      // PR-specific selectors
+      '.js-comment-text',
+      '.review-comment-contents',
+      '.js-review-comment-contents',
+      '.js-suggested-changes-blob',
+      '.js-file-line-container',
+      '[data-testid="pr-comment-body"]',
+      '[data-testid="review-comment-body"]',
+      '.js-timeline-item .comment-body',
+      '.js-discussion .comment-body'
     ];
     
     let plainTextCount = 0;
@@ -1243,8 +1267,12 @@
       console.log('Me @ GitHub: Detected organization discussion page');
     } else if (/github\.com\/[^/]+\/[^/]+\/discussions\//.test(location.href)) {
       console.log('Me @ GitHub: Detected repository discussion page');
+    } else if (/github\.com\/[^/]+\/[^/]+\/pull\//.test(location.href)) {
+      console.log('Me @ GitHub: Detected pull request page');
+    } else if (/github\.com\/[^/]+\/[^/]+\/issues\//.test(location.href)) {
+      console.log('Me @ GitHub: Detected issue page');
     } else {
-      console.log('Me @ GitHub: Detected issues/PR page');
+      console.log('Me @ GitHub: Detected other GitHub page');
     }
     
     // Clean up any previous initialization
