@@ -9,6 +9,18 @@
   let mentions = [];
   let currentMentionIndex = -1;
 
+  // Shared supported page patterns (DRY principle)
+  const SUPPORTED_PAGE_PATTERNS = [
+    /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,
+    /github\.com\/orgs\/[^/]+\/discussions\//,
+    /github\.com\/[^/]+\/[^/]+\/discussions\//
+  ];
+
+  // Helper function to check if current page is supported
+  function isOnSupportedPage() {
+    return SUPPORTED_PAGE_PATTERNS.some(pattern => pattern.test(location.href));
+  }
+
   // Get the logged-in user's username
   function getUsername() {
     // Check for username in the page header
@@ -445,7 +457,6 @@
     
     nav.innerHTML = `
       <button class="me-at-github-nav-btn me-at-github-prev" title="Previous mention">←</button>
-      <span class="me-at-github-nav-index">${index + 1}/${mentions.length}</span>
       <button class="me-at-github-nav-btn me-at-github-next" title="Next mention">→</button>
     `;
     
@@ -571,12 +582,22 @@
     
     // Find the issue/PR number element first - this is our primary target
     const issueSelectors = [
+      '[class*="HeaderViewer-module__issueNumberText"]', // Priority: New GitHub UI issue number
       '.gh-header-number',               // Issue/PR number in header
       'span.f1-light',                   // Alternative number styling  
       '.js-issue-number',                // JS issue number
       '.gh-header-title .f1-light',      // Number within title
       'h1 .f1-light',                    // Generic number in h1
-      '[data-testid=\"issue-title\"] .f1-light', // New GitHub UI\n      'h1 span.color-fg-muted',          // GitHub's muted text styling\n      'h1 .color-fg-muted',              // Alternative muted styling\n      'span[data-testid=\"issue-number\"]', // Possible data attribute\n      '.issue-title-actions + h1 span',  // Adjacent to actions\n      'h1 > span:first-child',           // First span in h1 (often the number)\n      '.js-issue-title span',            // Span within issue title\n      'bdi span',                        // Span within bdi element\n      '.gh-header-meta .color-fg-muted', // Header meta with muted color\n      'span[title*=\"#\"]'                // Span with # in title attribute
+      '[data-testid="issue-title"] .f1-light', // New GitHub UI
+      'h1 span.color-fg-muted',          // GitHub's muted text styling
+      'h1 .color-fg-muted',              // Alternative muted styling
+      'span[data-testid="issue-number"]', // Possible data attribute
+      '.issue-title-actions + h1 span',  // Adjacent to actions
+      'h1 > span:first-child',           // First span in h1 (often the number)
+      '.js-issue-title span',            // Span within issue title
+      'bdi span',                        // Span within bdi element
+      '.gh-header-meta .color-fg-muted', // Header meta with muted color
+      'span[title*="#"]'                 // Span with # in title attribute
     ];
     
     let issueNumberElement = null;
@@ -694,32 +715,41 @@
       }
     });
     
-    // Insert into header area
-    document.body.appendChild(stickyCounter);
+    // Insert into GitHub's sticky header if available, otherwise fallback to body
+    const stickyHeader = document.querySelector('[data-testid="issue-metadata-sticky"]');
+    const stickyContent = stickyHeader?.querySelector('.HeaderMetadata-module__stickyContent--jGltj');
     
-    // Show/hide based on scroll position
-    let isHeaderVisible = true;
-    const checkScroll = () => {
-      const headerHeight = 80; // GitHub's header height
-      const scrolled = window.scrollY > headerHeight;
+    if (stickyContent) {
+      // Insert at the beginning of the sticky content
+      stickyContent.insertBefore(stickyCounter, stickyContent.firstChild);
+    } else {
+      // Fallback: append to body with original scroll behavior
+      document.body.appendChild(stickyCounter);
       
-      if (scrolled && isHeaderVisible) {
-        stickyCounter.style.display = 'flex';
-        stickyCounter.style.opacity = '1';
-        isHeaderVisible = false;
-      } else if (!scrolled && !isHeaderVisible) {
-        stickyCounter.style.opacity = '0';
-        setTimeout(() => {
-          if (window.scrollY <= headerHeight) {
-            stickyCounter.style.display = 'none';
-          }
-        }, 200);
-        isHeaderVisible = true;
-      }
-    };
-    
-    window.addEventListener('scroll', checkScroll);
-    checkScroll(); // Initial check
+      // Show/hide based on scroll position (only for body-appended counter)
+      let isHeaderVisible = true;
+      const checkScroll = () => {
+        const headerHeight = 80;
+        const scrolled = window.scrollY > headerHeight;
+        
+        if (scrolled && isHeaderVisible) {
+          stickyCounter.style.display = 'flex';
+          stickyCounter.style.opacity = '1';
+          isHeaderVisible = false;
+        } else if (!scrolled && !isHeaderVisible) {
+          stickyCounter.style.opacity = '0';
+          setTimeout(() => {
+            if (window.scrollY <= headerHeight) {
+              stickyCounter.style.display = 'none';
+            }
+          }, 200);
+          isHeaderVisible = true;
+        }
+      };
+      
+      window.addEventListener('scroll', checkScroll);
+      checkScroll(); // Initial check
+    }
   }
 
   // Create the dropdown menu
@@ -796,7 +826,11 @@
     if (mention.element && mention.element.closest) {
       const container = mention.element.closest('.comment-body, .js-comment-body, .markdown-body, .discussion-comment-body, .js-discussion-comment-body, [class*="DiscussionCommentViewer-module__DiscussionCommentBody"]');
       if (container) {
-        contextText = container.textContent || fullText;
+        // Clone the container to safely remove navigation controls without affecting the page
+        const tempContainer = container.cloneNode(true);
+        // Remove navigation controls from the clone
+        tempContainer.querySelectorAll('.me-at-github-nav').forEach(nav => nav.remove());
+        contextText = tempContainer.textContent || fullText;
       }
     }
     
@@ -895,14 +929,6 @@
     
     // Create a document fragment to hold the line content
     const fragment = document.createDocumentFragment();
-    
-    // Add line number if available (for code files or multi-line content)
-    if (lines.length > 1 && mentionLineIndex >= 0) {
-      const lineNumSpan = document.createElement('span');
-      lineNumSpan.classList.add('me-at-github-line-number');
-      lineNumSpan.textContent = `L${mentionLineIndex + 1}: `;
-      fragment.appendChild(lineNumSpan);
-    }
     
     // Find the mention in the display text and highlight it
     const mentionPattern = new RegExp(`@${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi');
@@ -1192,14 +1218,7 @@
   // Initialize the extension
   function init() {
     // Verify we're on a supported page
-    const supportedPagePatterns = [
-      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,  // Repository pages
-      /github\.com\/orgs\/[^/]+\/discussions\//,                    // Organization discussions
-      /github\.com\/[^/]+\/[^/]+\/discussions\//                   // Repository discussions (alternative pattern)
-    ];
-    
-    const isSupported = supportedPagePatterns.some(pattern => pattern.test(location.href));
-    if (!isSupported) {
+    if (!isOnSupportedPage()) {
       return;
     }
     
@@ -1276,14 +1295,7 @@
     }
     
     // Check if we're still on a supported page
-    const supportedPagePatterns = [
-      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,
-      /github\.com\/orgs\/[^/]+\/discussions\//,
-      /github\.com\/[^/]+\/[^/]+\/discussions\//
-    ];
-    
-    const isSupported = supportedPagePatterns.some(pattern => pattern.test(location.href));
-    if (!isSupported) {
+    if (!isOnSupportedPage()) {
       return;
     }
     
@@ -1457,14 +1469,7 @@
     // Only check if we have a username and document is visible
     if (!username || document.hidden) return;
     
-    const supportedPagePatterns = [
-      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,
-      /github\.com\/orgs\/[^/]+\/discussions\//,
-      /github\.com\/[^/]+\/[^/]+\/discussions\//
-    ];
-    
-    const isSupported = supportedPagePatterns.some(pattern => pattern.test(location.href));
-    if (isSupported && !document.querySelector('.me-at-github-counter')) {
+    if (isOnSupportedPage() && !document.querySelector('.me-at-github-counter')) {
       // Use requestIdleCallback for non-critical reinitialization to avoid blocking
       if (window.requestIdleCallback) {
         window.requestIdleCallback(() => initializeWithRetry(), { timeout: 2000 });
