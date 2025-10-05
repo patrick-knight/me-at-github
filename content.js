@@ -345,6 +345,7 @@
     });
     
     // Process each text node
+    let highlightedCount = 0;
     nodeGroups.forEach((mentionList, textNode) => {
       // Skip if already processed or if text node is polluted with navigation
       if (!textNode.parentNode || 
