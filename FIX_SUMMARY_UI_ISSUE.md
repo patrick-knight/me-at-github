@@ -4,7 +4,7 @@
 
 **Problem**: "The console is showing the detections but the on page UI is not showing up correctly"
 
-**Context**: User navigated to https://github.com/github/accessibility/issues/9373 and saw console detections but no UI elements.
+**Context**: User navigated to a GitHub issue page and saw console detections but no UI elements.
 
 ## Root Cause Analysis
 
@@ -24,13 +24,7 @@ Possible causes:
 ### 1. Enhanced Title Element Detection
 
 **Before:**
-```javascript
-let titleElement = document.querySelector(
-  'h1.gh-header-title .js-issue-title, ' +
-  'h1.gh-header-title bdi.js-issue-title, ' +
-  // ... long selector chain
-);
-```
+Single complex querySelector with multiple comma-separated selectors, no visibility validation.
 
 **After:**
 ```javascript
@@ -182,22 +176,22 @@ Verifies UI elements are still in DOM after creation (not removed by page update
 
 ### For Users
 
-1. **Reload Extension**
+**Step 1: Reload Extension**
    - Go to chrome://extensions/
    - Find "Me @ GitHub"
    - Click reload button (🔄)
 
-2. **Visit Issue Page**
+**Step 2: Visit Issue Page**
    - Go to any GitHub issue/PR/discussion where you're mentioned
    - Open DevTools Console (F12)
    - Refresh page
 
-3. **Run Diagnostics**
+**Step 3: Run Diagnostics**
    ```javascript
    meAtGitHubDiagnostics()
    ```
 
-4. **Check Results**
+**Step 4: Check Results**
    - Should see blue `@N` badge next to title
    - Should see highlights on mentions
    - Should see navigation controls on hover
