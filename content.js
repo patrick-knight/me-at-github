@@ -180,6 +180,7 @@
           className.includes('js-reaction-buttons') ||
           className.includes('participation-avatars') ||
           className.includes('participants') ||
+          className.includes('participant-avatar') ||
           element.closest && element.closest('[class*="ActivityHeader"]')) {
         return true;
       }
