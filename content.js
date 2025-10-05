@@ -281,26 +281,35 @@
     
     prevBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      navigateToMention(index - 1);
-      // Hide nav immediately after navigation
-      clearTimeout(hideTimeout);
-      nav.style.display = 'none';
-      isNavVisible = false;
+      e.preventDefault();
+      const success = navigateToMention(index - 1);
+      if (success) {
+        // Hide nav immediately after successful navigation
+        clearTimeout(hideTimeout);
+        nav.style.display = 'none';
+        isNavVisible = false;
+      }
     });
     
     nextBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      navigateToMention(index + 1);
-      // Hide nav immediately after navigation
-      clearTimeout(hideTimeout);
-      nav.style.display = 'none';
-      isNavVisible = false;
+      e.preventDefault();
+      const success = navigateToMention(index + 1);
+      if (success) {
+        // Hide nav immediately after successful navigation
+        clearTimeout(hideTimeout);
+        nav.style.display = 'none';
+        isNavVisible = false;
+      }
     });
   }
 
   // Navigate to a specific mention
   function navigateToMention(index) {
-    if (mentions.length === 0) return;
+    if (mentions.length === 0) {
+      console.log('Me @ GitHub: No mentions to navigate to');
+      return false;
+    }
     
     // Wrap around: if index is out of bounds, loop to the other end
     if (index < 0) {
@@ -309,8 +318,21 @@
       index = 0;
     }
     
+    // Ensure index is still valid
+    if (index < 0 || index >= mentions.length) {
+      console.log('Me @ GitHub: Invalid mention index:', index);
+      return false;
+    }
+    
     currentMentionIndex = index;
     const mention = mentions[index];
+    
+    if (!mention || !mention.element) {
+      console.log('Me @ GitHub: Invalid mention or element at index:', index);
+      return false;
+    }
+    
+    console.log(`Me @ GitHub: Navigating to mention ${index + 1}/${mentions.length}`);
     
     // Remove active class from all mentions
     document.querySelectorAll('.me-at-github-mention-text').forEach(el => {
@@ -320,11 +342,21 @@
     // Add active class to current mention
     mention.element.classList.add('active');
     
-    // Scroll to the mention
-    mention.element.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center'
-    });
+    // Scroll to the mention with error handling
+    try {
+      mention.element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    } catch (error) {
+      console.log('Me @ GitHub: Error scrolling to mention:', error);
+      // Fallback: try without smooth behavior
+      mention.element.scrollIntoView({
+        block: 'center'
+      });
+    }
+    
+    return true;
   }
 
   // Create and inject the counter badge
@@ -467,14 +499,7 @@
     stickyCounter.textContent = `@${count}`;
     stickyCounter.title = `${count} mention${count !== 1 ? 's' : ''} of @${username}`;
     
-    // Add click handler
-    stickyCounter.addEventListener('click', (e) => {
-      e.stopPropagation();
-      // Scroll to first mention when clicked
-      if (mentions.length > 0) {
-        navigateToMention(0);
-      }
-    });
+        // Add click handler\n    stickyCounter.addEventListener('click', (e) => {\n      e.stopPropagation();\n      e.preventDefault();\n      // Scroll to first mention when clicked\n      if (mentions.length > 0) {\n        const success = navigateToMention(0);\n        if (!success) {\n          console.log('Me @ GitHub: Sticky counter navigation failed');\n        }\n      }\n    });
     
     // Insert into header area
     document.body.appendChild(stickyCounter);
@@ -860,6 +885,11 @@
     console.log('Me @ GitHub: Found', mentions.length, 'mentions');
     
     if (mentions.length > 0) {
+      // Initialize mention index
+      if (currentMentionIndex < 0) {
+        currentMentionIndex = 0;
+      }
+      
       // Highlight mentions
       highlightMentions();
       
@@ -904,12 +934,20 @@
     // Alt+N for next mention
     if (e.altKey && e.key === 'n') {
       e.preventDefault();
-      navigateToMention(currentMentionIndex + 1);
+      e.stopPropagation();
+      const success = navigateToMention(currentMentionIndex + 1);
+      if (!success) {
+        console.log('Me @ GitHub: Navigation failed, preventing default behavior');
+      }
     }
     // Alt+P for previous mention
     else if (e.altKey && e.key === 'p') {
       e.preventDefault();
-      navigateToMention(currentMentionIndex - 1);
+      e.stopPropagation();
+      const success = navigateToMention(currentMentionIndex - 1);
+      if (!success) {
+        console.log('Me @ GitHub: Navigation failed, preventing default behavior');
+      }
     }
   }
 
@@ -1006,6 +1044,12 @@
         const newMentions = findMentions();
         if (newMentions.length > mentions.length) {
           mentions = newMentions;
+          
+          // Validate and reset current mention index if needed
+          if (currentMentionIndex >= mentions.length) {
+            currentMentionIndex = 0;
+          }
+          
           // Only highlight the new mentions
           highlightMentions();
           // Update counter if needed
