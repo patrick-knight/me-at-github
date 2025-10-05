@@ -584,4 +584,58 @@
     subtree: true
   });
 
+  // Expose diagnostic function for debugging
+  window.meAtGitHubDiagnostics = function() {
+    console.log('=== Me @ GitHub Diagnostics ===');
+    console.log('Extension State:');
+    console.log('  - Username:', username || 'NOT SET');
+    console.log('  - Mentions found:', mentions.length);
+    console.log('  - Current mention index:', currentMentionIndex);
+    console.log('');
+    console.log('DOM Elements:');
+    console.log('  - Counter elements:', document.querySelectorAll('.me-at-github-counter').length);
+    console.log('  - Highlight elements:', document.querySelectorAll('.me-at-github-mention-text').length);
+    console.log('  - Dropdown elements:', document.querySelectorAll('.me-at-github-dropdown').length);
+    console.log('');
+    
+    const counter = document.querySelector('.me-at-github-counter');
+    if (counter) {
+      console.log('Counter Element:');
+      console.log('  - Exists: YES');
+      console.log('  - Visible:', counter.offsetWidth > 0 && counter.offsetHeight > 0);
+      console.log('  - Display:', window.getComputedStyle(counter).display);
+      console.log('  - Visibility:', window.getComputedStyle(counter).visibility);
+      console.log('  - Opacity:', window.getComputedStyle(counter).opacity);
+      console.log('  - Parent:', counter.parentElement?.tagName, counter.parentElement?.className);
+      console.log('  - Position:', counter.getBoundingClientRect());
+    } else {
+      console.log('Counter Element: NOT FOUND');
+    }
+    console.log('');
+    
+    console.log('Title Element Check:');
+    const selectors = [
+      'h1.gh-header-title',
+      'h1.js-issue-title',
+      'h1[data-testid="issue-title"]',
+      '.gh-header-title',
+      'bdi.js-issue-title',
+      'span.js-issue-title',
+      'h1'
+    ];
+    selectors.forEach(selector => {
+      const el = document.querySelector(selector);
+      if (el) {
+        console.log(`  - ${selector}: FOUND (${el.tagName}, visible: ${el.offsetWidth > 0 && el.offsetHeight > 0})`);
+      } else {
+        console.log(`  - ${selector}: not found`);
+      }
+    });
+    console.log('');
+    console.log('To manually re-initialize, run: location.reload()');
+    console.log('===============================');
+  };
+  
+  console.log('Me @ GitHub: Diagnostics function available. Run meAtGitHubDiagnostics() to check extension state.');
+
 })();

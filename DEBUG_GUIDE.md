@@ -162,6 +162,19 @@ Me @ GitHub: Total highlight elements created: 0
 
 ## Additional Diagnostics
 
+### Quick Diagnostic Command ⭐ NEW!
+
+In DevTools Console, type:
+```javascript
+meAtGitHubDiagnostics()
+```
+
+This will display a comprehensive report including:
+- Extension state (username, mentions found)
+- DOM element counts (counters, highlights, dropdowns)
+- Counter visibility and styling details
+- Title element selector results
+
 ### Check if Extension is Running
 
 In DevTools Console, type:
