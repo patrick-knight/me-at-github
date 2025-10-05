@@ -31,10 +31,23 @@
     const mentions = [];
     
     // First, find GitHub's native user mention links
-    const mentionLinks = document.querySelectorAll('a.user-mention');
-    console.log('Me @ GitHub: Found', mentionLinks.length, 'user-mention links');
+    // Try multiple selectors as GitHub may use different classes
+    const mentionSelectors = [
+      'a.user-mention',
+      'a[href*="/' + username + '"]',
+      'a.mention',
+      'a[data-hovercard-type="user"]'
+    ];
     
-    mentionLinks.forEach((link, idx) => {
+    const allLinks = new Set();
+    mentionSelectors.forEach(selector => {
+      const links = document.querySelectorAll(selector);
+      links.forEach(link => allLinks.add(link));
+    });
+    
+    console.log('Me @ GitHub: Found', allLinks.size, 'potential mention links');
+    
+    allLinks.forEach((link, idx) => {
       const linkText = link.textContent.trim();
       const linkHref = link.getAttribute('href') || link.href;
       
@@ -59,7 +72,7 @@
           });
           console.log(`Me @ GitHub: Added mention from link ${idx + 1}`);
         } else {
-          console.log(`Me @ GitHub: Link ${idx + 1} has no text node`);
+          console.log(`Me @ GitHub: Link ${idx + 1} has no text node, children:`, link.childNodes);
         }
       }
     });
@@ -78,8 +91,12 @@
               parent.tagName === 'SCRIPT' || 
               parent.tagName === 'STYLE' ||
               parent.classList.contains('me-at-github-counter') ||
-              parent.classList.contains('me-at-github-dropdown') ||
-              parent.classList.contains('user-mention')) {  // Skip GitHub's mention links (already processed)
+              parent.classList.contains('me-at-github-dropdown')) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          
+          // Skip if parent is a link that might be a mention (already processed above)
+          if (parent.tagName === 'A' && parent.getAttribute('href')?.includes(`/${username}`)) {
             return NodeFilter.FILTER_REJECT;
           }
           
