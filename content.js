@@ -516,9 +516,10 @@
 
   // Run when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 500));
   } else {
-    init();
+    // Add a small delay to ensure GitHub's dynamic content is loaded
+    setTimeout(init, 500);
   }
 
   // Setup keyboard shortcuts once (no cleanup needed as it's a single global handler)
