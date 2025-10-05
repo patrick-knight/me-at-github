@@ -178,6 +178,8 @@
           className.includes('social-reactions') ||
           className.includes('reactions-container') ||
           className.includes('js-reaction-buttons') ||
+          className.includes('participation-avatars') ||
+          className.includes('participants') ||
           element.closest && element.closest('[class*="ActivityHeader"]')) {
         return true;
       }
