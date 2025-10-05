@@ -714,6 +714,25 @@
       toggleDropdown(counter);
     });
     
+    // Store reference for body click handler
+    counter._dropdownToggleHandler = (e) => {
+      // Don't toggle if clicking on the counter itself or dropdown content
+      if (counter.contains(e.target) || 
+          document.querySelector('.me-at-github-dropdown-portal')?.contains(e.target)) {
+        return;
+      }
+      
+      const dropdown = counter.querySelector('.me-at-github-dropdown');
+      const bodyPortal = document.querySelector('body > .me-at-github-dropdown-portal');
+      
+      // Toggle dropdown visibility
+      if (dropdown && dropdown.style.display === 'block' || bodyPortal) {
+        hideDropdown(counter);
+      } else {
+        showDropdown(counter);
+      }
+    };
+    
     // Insert the counter after the target element
     issueNumberElement.parentNode.insertBefore(counter, issueNumberElement.nextSibling);
     console.log('Me @ GitHub: Counter badge inserted after target element');
@@ -834,7 +853,7 @@
       li.addEventListener('click', (e) => {
         e.stopPropagation();
         navigateToMention(index);
-        dropdown.style.display = 'none';
+        hideDropdown(counter);
       });
       
       list.appendChild(li);
@@ -843,10 +862,8 @@
     dropdown.appendChild(list);
     counter.appendChild(dropdown);
     
-    // Close dropdown when clicking outside
-    document.addEventListener('click', () => {
-      dropdown.style.display = 'none';
-    });
+    // Add body click handler for toggle functionality
+    // Note: This will be managed by the counter's toggle handler
     
     // Reposition dropdown on window resize if it's visible
     window.addEventListener('resize', () => {
@@ -1011,38 +1028,61 @@
     if (!dropdown) return;
     
     if (dropdown.style.display === 'none') {
-      dropdown.style.display = 'block';
-      
-      // Ensure maximum z-index
-      ensureMaxZIndex(dropdown);
-      
-      // Nuclear option: move dropdown to body if z-index issues persist
-      const counterRect = counter.getBoundingClientRect();
-      const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
-      
-      // Clean up any existing body-level dropdowns
-      bodyDropdowns.forEach(d => d.remove());
-      
-      // Check if dropdown is properly visible after a short delay
-      setTimeout(() => {
-        const dropdownRect = dropdown.getBoundingClientRect();
-        const isVisible = dropdownRect.width > 0 && dropdownRect.height > 0;
-        const computedZIndex = parseInt(window.getComputedStyle(dropdown).zIndex);
-        
-        if (!isVisible || computedZIndex < 1000000) {
-          console.log('Me @ GitHub: Dropdown may be hidden, creating body-level portal...');
-          createBodyPortalDropdown(counter, dropdown);
-        }
-      }, 100);
-      
-      // Smart positioning to keep dropdown on screen
-      positionDropdown(counter, dropdown);
+      showDropdown(counter);
     } else {
-      dropdown.style.display = 'none';
-      // Clean up any body portal
-      const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
-      bodyDropdowns.forEach(d => d.remove());
+      hideDropdown(counter);
     }
+  }
+  
+  // Show dropdown with proper positioning and event handling
+  function showDropdown(counter) {
+    const dropdown = counter.querySelector('.me-at-github-dropdown');
+    if (!dropdown) return;
+    
+    dropdown.style.display = 'block';
+    
+    // Ensure maximum z-index
+    ensureMaxZIndex(dropdown);
+    
+    // Nuclear option: move dropdown to body if z-index issues persist
+    const counterRect = counter.getBoundingClientRect();
+    const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
+    
+    // Clean up any existing body-level dropdowns
+    bodyDropdowns.forEach(d => d.remove());
+    
+    // Check if dropdown is properly visible after a short delay
+    setTimeout(() => {
+      const dropdownRect = dropdown.getBoundingClientRect();
+      const isVisible = dropdownRect.width > 0 && dropdownRect.height > 0;
+      const computedZIndex = parseInt(window.getComputedStyle(dropdown).zIndex);
+      
+      if (!isVisible || computedZIndex < 1000000) {
+        console.log('Me @ GitHub: Dropdown may be hidden, creating body-level portal...');
+        createBodyPortalDropdown(counter, dropdown);
+      }
+    }, 100);
+    
+    // Smart positioning to keep dropdown on screen
+    positionDropdown(counter, dropdown);
+    
+    // Add body click listener for toggle functionality
+    document.addEventListener('click', counter._dropdownToggleHandler, { capture: true });
+  }
+  
+  // Hide dropdown and clean up event listeners
+  function hideDropdown(counter) {
+    const dropdown = counter.querySelector('.me-at-github-dropdown');
+    if (dropdown) {
+      dropdown.style.display = 'none';
+    }
+    
+    // Clean up any body portal
+    const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
+    bodyDropdowns.forEach(d => d.remove());
+    
+    // Remove body click listener
+    document.removeEventListener('click', counter._dropdownToggleHandler, { capture: true });
   }
   
   // Create a body-level dropdown portal to escape stacking context issues
@@ -1067,8 +1107,7 @@
         const index = parseInt(e.target.closest('.me-at-github-dropdown-item').dataset.mentionIndex);
         if (!isNaN(index)) {
           navigateToMention(index);
-          portalDropdown.remove();
-          originalDropdown.style.display = 'none';
+          hideDropdown(counter);
         }
       }
     });

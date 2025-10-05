@@ -1,80 +1,91 @@
-/* Styles for Me @ GitHub extension */
+/* Styles for Me @ GitHub extension using GitHub Primer Design System */
 
-/* Counter badge */
+/* Counter badge using Primer tokens */
 .me-at-github-counter {
   display: inline-flex !important;
   align-items: center;
-  margin-left: 12px;
-  padding: 4px 10px;
-  background: #0969da !important;
-  color: white !important;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
+  gap: var(--base-size-4, 4px);
+  margin-left: var(--base-size-12, 12px);
+  padding: var(--base-size-4, 4px) var(--base-size-8, 8px);
+  background: var(--bgColor-accent-emphasis, #0969da) !important;
+  color: var(--fgColor-onEmphasis, #ffffff) !important;
+  border: var(--borderWidth-thin, 1px) solid transparent;
+  border-radius: var(--borderRadius-full, 2rem);
+  font-family: var(--fontStack-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif);
+  font-size: var(--text-body-size-small, 12px);
+  font-weight: var(--base-text-weight-medium, 500);
+  line-height: var(--text-body-lineHeight-small, 1.6666);
   cursor: pointer;
   position: relative;
-  transition: background 0.2s ease;
+  transition: all var(--animation-duration-fast, 80ms) var(--animation-easing-glide, cubic-bezier(0.25, 1, 0.5, 1));
   vertical-align: middle;
   z-index: 1;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .me-at-github-counter:hover {
-  background: #0860ca;
+  background: var(--bgColor-accent-emphasis-hover, #0860ca) !important;
+  transform: scale(1.05);
 }
 
-/* Sticky counter that appears when scrolling */
+/* Sticky counter using Primer floating component styles */
 .me-at-github-sticky-counter {
   display: none;
   position: fixed;
-  top: 60px;
-  right: 16px;
+  top: var(--base-size-64, 64px);
+  right: var(--base-size-16, 16px);
   align-items: center;
   justify-content: center;
-  padding: 6px 10px;
-  min-width: 32px;
-  height: 28px;
-  background: #0969da !important;
-  color: white !important;
-  border-radius: 14px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: var(--base-size-6, 6px) var(--base-size-8, 8px);
+  min-width: var(--base-size-32, 32px);
+  height: var(--base-size-28, 28px);
+  background: var(--bgColor-accent-emphasis, #0969da) !important;
+  color: var(--fgColor-onEmphasis, #ffffff) !important;
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-accent-emphasis, #0969da);
+  border-radius: var(--borderRadius-full, 2rem);
+  font-family: var(--fontStack-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif);
+  font-size: var(--text-caption-size, 12px);
+  font-weight: var(--base-text-weight-medium, 500);
+  line-height: var(--text-caption-lineHeight, 1.3333);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-floating-small, 0 1px 3px rgba(16, 22, 26, 0.12), 0 1px 2px rgba(16, 22, 26, 0.24));
   z-index: 999999 !important;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  transition: all var(--animation-duration-fast, 80ms) var(--animation-easing-glide, cubic-bezier(0.25, 1, 0.5, 1));
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   pointer-events: auto;
   -webkit-user-select: none;
   user-select: none;
 }
 
 .me-at-github-sticky-counter:hover {
-  background: #0860ca !important;
+  background: var(--bgColor-accent-emphasis-hover, #0860ca) !important;
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-floating-medium, 0 4px 8px rgba(16, 22, 26, 0.12), 0 2px 4px rgba(16, 22, 26, 0.08));
 }
 
 .me-at-github-sticky-counter:active {
   transform: scale(0.95);
-  transition: all 0.1s ease;
+  transition: all var(--animation-duration-faster, 40ms) var(--animation-easing-glide, cubic-bezier(0.25, 1, 0.5, 1));
 }
 
-/* Dropdown menu */
+/* Dropdown menu using Primer Overlay component styles */
 .me-at-github-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + var(--base-size-8, 8px));
   right: 0;
-  background: white !important;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(140, 149, 159, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
-  min-width: 300px;
-  max-width: 500px;
-  max-height: 400px;
+  background: var(--bgColor-default, #ffffff) !important;
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default, #d1d9e0);
+  border-radius: var(--borderRadius-medium, 6px);
+  box-shadow: var(--shadow-floating-large, 0 16px 32px rgba(1, 4, 9, 0.1), 0 0 0 1px rgba(16, 22, 26, 0.1));
+  min-width: var(--base-size-300, 300px);
+  max-width: var(--base-size-500, 500px);
+  max-height: var(--base-size-400, 400px);
   overflow-y: auto;
   z-index: 2147483647 !important;
+  font-family: var(--fontStack-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif);
   -webkit-backdrop-filter: blur(0px);
   backdrop-filter: blur(0px);
 }
@@ -197,16 +208,17 @@ html .me-at-github-dropdown {
 .me-at-github-dropdown-list {
   list-style: none;
   margin: 0;
-  padding: 8px 0;
+  padding: var(--base-size-8, 8px) 0;
 }
 
 .me-at-github-dropdown-item {
   display: flex;
   align-items: flex-start;
-  padding: 8px 16px;
+  gap: var(--base-size-8, 8px);
+  padding: var(--base-size-8, 8px) var(--base-size-16, 16px);
   cursor: pointer;
-  transition: background 0.1s ease;
-  border-bottom: 1px solid #f6f8fa;
+  transition: background-color var(--animation-duration-fast, 80ms) var(--animation-easing-glide, cubic-bezier(0.25, 1, 0.5, 1));
+  border-bottom: var(--borderWidth-thin, 1px) solid var(--borderColor-muted, #d1d9e0b3);
 }
 
 .me-at-github-dropdown-item:last-child {
@@ -214,46 +226,46 @@ html .me-at-github-dropdown {
 }
 
 .me-at-github-dropdown-item:hover {
-  background: #f6f8fa;
+  background: var(--bgColor-muted, #f6f8fa);
 }
 
 .me-at-github-dropdown-index {
   display: inline-block;
-  min-width: 30px;
-  color: #656d76;
-  font-weight: 600;
-  font-size: 12px;
-  margin-right: 8px;
+  min-width: var(--base-size-30, 30px);
+  color: var(--fgColor-muted, #656d76);
+  font-weight: var(--base-text-weight-medium, 500);
+  font-size: var(--text-caption-size, 12px);
+  line-height: var(--text-caption-lineHeight, 1.3333);
   flex-shrink: 0;
 }
 
-/* Dropdown context text */
+/* Dropdown context text using Primer typography */
 .me-at-github-dropdown-context {
   flex: 1;
-  font-size: 13px;
-  color: #656d76;
-  line-height: 1.4;
+  font-size: var(--text-body-size-small, 12px);
+  color: var(--fgColor-muted, #656d76);
+  line-height: var(--text-body-lineHeight-small, 1.6666);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 280px;
+  max-width: var(--base-size-280, 280px);
 }
 
 .me-at-github-dropdown-context strong {
-  color: #0969da;
-  font-weight: 600;
+  color: var(--fgColor-accent, #0969da);
+  font-weight: var(--base-text-weight-semibold, 600);
 }
 
-/* Line number in dropdown context */
+/* Line number in dropdown context using Primer muted styling */
 .me-at-github-line-number {
-  color: #8b949e;
-  font-size: 11px;
-  font-weight: 500;
-  margin-right: 6px;
+  color: var(--fgColor-subtle, #8b949e);
+  font-size: var(--text-caption-size, 12px);
+  font-weight: var(--base-text-weight-normal, 400);
+  margin-right: var(--base-size-6, 6px);
   opacity: 0.8;
 }
 
-/* Mention highlighting */
+/* Mention highlighting using Primer attention colors */
 .me-at-github-mention {
   display: inline !important;
 }
@@ -261,28 +273,29 @@ html .me-at-github-dropdown {
 .me-at-github-mention-text {
   position: relative;
   display: inline !important;
-  background: rgba(255, 212, 0, 0.08) !important;
-  color: #1f2328 !important;
-  padding: 1px 3px;
-  border-radius: 3px;
-  border: 1px solid rgba(255, 212, 0, 0.2);
-  font-weight: 600;
-  transition: all 0.15s ease-in-out;
+  background: var(--bgColor-attention-muted, rgba(212, 167, 44, 0.1)) !important;
+  color: var(--fgColor-default, #1f2328) !important;
+  padding: var(--base-size-2, 2px) var(--base-size-4, 4px);
+  border-radius: var(--borderRadius-small, 3px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-attention-muted, rgba(212, 167, 44, 0.4));
+  font-family: var(--fontStack-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif);
+  font-weight: var(--base-text-weight-semibold, 600);
+  transition: all var(--animation-duration-fast, 80ms) var(--animation-easing-glide, cubic-bezier(0.25, 1, 0.5, 1));
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
 
 .me-at-github-mention-text:hover {
-  background: rgba(255, 212, 0, 0.12) !important;
-  border-color: rgba(255, 212, 0, 0.35);
-  box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.1);
+  background: var(--bgColor-attention-muted-hover, rgba(212, 167, 44, 0.15)) !important;
+  border-color: var(--borderColor-attention-emphasis, #bf8700);
+  box-shadow: 0 0 0 var(--base-size-2, 2px) var(--borderColor-attention-muted, rgba(212, 167, 44, 0.15));
 }
 
 .me-at-github-mention-text.active {
-  background: rgba(255, 212, 0, 0.2) !important;
-  border-color: #ffd33d;
-  box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.3);
-  color: #1f2328 !important;
+  background: var(--bgColor-attention-emphasis, #bf8700) !important;
+  border-color: var(--borderColor-attention-emphasis, #bf8700);
+  box-shadow: 0 0 0 var(--base-size-2, 2px) var(--borderColor-attention-muted, rgba(212, 167, 44, 0.4));
+  color: var(--fgColor-onEmphasis, #ffffff) !important;
 }
 
 /* Link wrapper for GitHub's native mentions */
@@ -307,26 +320,27 @@ html .me-at-github-dropdown {
   background: none !important;
 }
 
-/* Navigation controls */
+/* Navigation controls using Primer Overlay positioning */
 .me-at-github-nav {
   display: none !important;
   position: absolute;
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  margin-top: 4px;
-  background: white;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  padding: 4px;
-  box-shadow: 0 4px 12px rgba(140, 149, 159, 0.2);
+  margin-top: var(--base-size-4, 4px);
+  background: var(--bgColor-default, #ffffff);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default, #d1d9e0);
+  border-radius: var(--borderRadius-medium, 6px);
+  padding: var(--base-size-4, 4px);
+  box-shadow: var(--shadow-floating-small, 0 1px 3px rgba(16, 22, 26, 0.12), 0 1px 2px rgba(16, 22, 26, 0.24));
   white-space: nowrap;
   z-index: 2147483646 !important;
   align-items: center;
-  gap: 4px;
+  gap: var(--base-size-4, 4px);
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
+  font-family: var(--fontStack-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif);
 }
 
 /* Navigation shows on hover and stays visible longer */
@@ -349,94 +363,98 @@ html .me-at-github-dropdown {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid #d0d7de;
-  background: white;
-  border-radius: 4px;
+  width: var(--base-size-24, 24px);
+  height: var(--base-size-24, 24px);
+  border: var(--borderWidth-thin, 1px) solid var(--borderColor-default, #d1d9e0);
+  background: var(--bgColor-default, #ffffff);
+  border-radius: var(--borderRadius-small, 3px);
   cursor: pointer;
-  font-size: 14px;
-  color: #1f2328;
-  transition: all 0.1s ease;
+  font-size: var(--text-body-size-medium, 14px);
+  color: var(--fgColor-default, #1f2328);
+  transition: all var(--animation-duration-fast, 80ms) var(--animation-easing-glide, cubic-bezier(0.25, 1, 0.5, 1));
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .me-at-github-nav-btn:hover {
-  background: #f6f8fa;
-  border-color: #1f2328;
+  background: var(--bgColor-muted, #f6f8fa);
+  border-color: var(--borderColor-default-hover, #8c959f);
 }
 
 .me-at-github-nav-btn:active {
-  background: #eaeef2;
+  background: var(--bgColor-muted-active, #eaeef2);
+  border-color: var(--borderColor-default-active, #8c959f);
 }
 
 .me-at-github-nav-index {
-  padding: 0 8px;
-  font-size: 12px;
-  color: #656d76;
-  font-weight: 600;
+  padding: 0 var(--base-size-8, 8px);
+  font-size: var(--text-caption-size, 12px);
+  color: var(--fgColor-muted, #656d76);
+  font-weight: var(--base-text-weight-medium, 500);
+  line-height: var(--text-caption-lineHeight, 1.3333);
 }
 
-/* Dark mode support */
+/* Dark mode support using Primer dark theme tokens */
 @media (prefers-color-scheme: dark) {
   .me-at-github-dropdown {
-    background: #161b22 !important;
-    border-color: #30363d;
-    box-shadow: 0 8px 24px rgba(1, 4, 9, 0.3);
+    background: var(--bgColor-default, #0d1117) !important;
+    border-color: var(--borderColor-default, #30363d);
+    box-shadow: var(--shadow-floating-large, 0 16px 32px rgba(1, 4, 9, 0.1), 0 0 0 1px rgba(240, 246, 252, 0.1));
     z-index: 2147483647 !important;
   }
   
   .me-at-github-dropdown-center {
-    box-shadow: 0 8px 24px rgba(1, 4, 9, 0.4);
+    box-shadow: var(--shadow-floating-large, 0 16px 32px rgba(1, 4, 9, 0.1), 0 0 0 1px rgba(240, 246, 252, 0.1));
   }
   
   .me-at-github-nav {
-    background: #161b22 !important;
-    border-color: #30363d;
-    box-shadow: 0 4px 12px rgba(1, 4, 9, 0.3);
+    background: var(--bgColor-default, #0d1117) !important;
+    border-color: var(--borderColor-default, #30363d);
+    box-shadow: var(--shadow-floating-small, 0 1px 3px rgba(16, 22, 26, 0.12), 0 1px 2px rgba(16, 22, 26, 0.24));
     z-index: 2147483646 !important;
   }
   
   .me-at-github-dropdown-item {
-    border-bottom-color: #21262d;
+    border-bottom-color: var(--borderColor-muted, #21262db3);
   }
   
   .me-at-github-dropdown-item:hover {
-    background: #21262d;
+    background: var(--bgColor-muted, #21262d);
   }
   
   .me-at-github-dropdown-index {
-    color: #8b949e;
+    color: var(--fgColor-muted, #7d8590);
   }
   
   .me-at-github-dropdown-context {
-    color: #c9d1d9;
+    color: var(--fgColor-default, #e6edf3);
   }
   
   .me-at-github-dropdown-context strong {
-    color: #58a6ff;
+    color: var(--fgColor-accent, #4493f8);
   }
   
   .me-at-github-line-number {
-    color: #7d8590;
+    color: var(--fgColor-subtle, #6e7681);
   }
   
   .me-at-github-mention-text {
-    background: rgba(255, 212, 0, 0.1) !important;
-    color: #f0f6fc !important;
-    border-color: rgba(255, 212, 0, 0.25);
+    background: var(--bgColor-attention-muted, rgba(187, 128, 9, 0.15)) !important;
+    color: var(--fgColor-default, #e6edf3) !important;
+    border-color: var(--borderColor-attention-muted, rgba(187, 128, 9, 0.4));
   }
   
   .me-at-github-mention-text:hover {
-    background: rgba(255, 212, 0, 0.15) !important;
-    border-color: rgba(255, 212, 0, 0.4);
-    box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.15);
+    background: var(--bgColor-attention-muted-hover, rgba(187, 128, 9, 0.25)) !important;
+    border-color: var(--borderColor-attention-emphasis, #d29922);
+    box-shadow: 0 0 0 var(--base-size-2, 2px) var(--borderColor-attention-muted, rgba(187, 128, 9, 0.25));
   }
   
   .me-at-github-mention-text.active {
-    background: rgba(255, 212, 0, 0.25) !important;
-    border-color: #ffd33d;
-    box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.4);
-    color: #0d1117 !important;
+    background: var(--bgColor-attention-emphasis, #d29922) !important;
+    border-color: var(--borderColor-attention-emphasis, #d29922);
+    box-shadow: 0 0 0 var(--base-size-2, 2px) var(--borderColor-attention-muted, rgba(187, 128, 9, 0.4));
+    color: var(--fgColor-onEmphasis, #1f2328) !important;
   }
   
   .me-at-github-link-wrapper a.user-mention {
