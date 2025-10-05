@@ -26,25 +26,39 @@
 .me-at-github-sticky-counter {
   display: none;
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 60px;
+  right: 16px;
   align-items: center;
-  padding: 8px 12px;
+  justify-content: center;
+  padding: 6px 10px;
+  min-width: 32px;
+  height: 28px;
   background: #0969da !important;
   color: white !important;
-  border-radius: 16px;
-  font-size: 14px;
+  border-radius: 14px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 999999 !important;
   transition: all 0.2s ease;
-  border: 2px solid white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .me-at-github-sticky-counter:hover {
   background: #0860ca !important;
-  transform: scale(1.05);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.me-at-github-sticky-counter:active {
+  transform: scale(0.95);
+  transition: all 0.1s ease;
 }
 
 /* Dropdown menu */
@@ -388,11 +402,13 @@ html .me-at-github-dropdown {
   
   .me-at-github-sticky-counter {
     background: #58a6ff !important;
-    border-color: #161b22;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #000000 !important;
   }
   
   .me-at-github-sticky-counter:hover {
     background: #4493f8 !important;
+    color: #000000 !important;
   }
   
   .me-at-github-nav {

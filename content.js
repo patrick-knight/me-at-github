@@ -505,7 +505,18 @@
     stickyCounter.textContent = `@${count}`;
     stickyCounter.title = `${count} mention${count !== 1 ? 's' : ''} of @${username}`;
     
-        // Add click handler\n    stickyCounter.addEventListener('click', (e) => {\n      e.stopPropagation();\n      e.preventDefault();\n      // Scroll to first mention when clicked\n      if (mentions.length > 0) {\n        const success = navigateToMention(0);\n        if (!success) {\n          console.log('Me @ GitHub: Sticky counter navigation failed');\n        }\n      }\n    });
+        // Add click handler
+    stickyCounter.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      // Scroll to first mention when clicked
+      if (mentions.length > 0) {
+        const success = navigateToMention(0);
+        if (!success) {
+          console.log('Me @ GitHub: Sticky counter navigation failed');
+        }
+      }
+    });
     
     // Insert into header area
     document.body.appendChild(stickyCounter);
@@ -513,14 +524,20 @@
     // Show/hide based on scroll position
     let isHeaderVisible = true;
     const checkScroll = () => {
-      const headerHeight = 100; // Approximate header height
+      const headerHeight = 80; // GitHub's header height
       const scrolled = window.scrollY > headerHeight;
       
       if (scrolled && isHeaderVisible) {
         stickyCounter.style.display = 'flex';
+        stickyCounter.style.opacity = '1';
         isHeaderVisible = false;
       } else if (!scrolled && !isHeaderVisible) {
-        stickyCounter.style.display = 'none';
+        stickyCounter.style.opacity = '0';
+        setTimeout(() => {
+          if (window.scrollY <= headerHeight) {
+            stickyCounter.style.display = 'none';
+          }
+        }, 200);
         isHeaderVisible = true;
       }
     };
