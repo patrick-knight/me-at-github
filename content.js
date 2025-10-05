@@ -105,7 +105,12 @@
           
           // Notification areas
           'notification-list-item-title',
-          'notification-list-item-link'
+          'notification-list-item-link',
+          
+          // Participants and collaboration areas
+          'participant-avatar',
+          'participation-avatars',
+          'participants'
         ];
         
         for (const excludedClass of excludedClasses) {
@@ -181,6 +186,8 @@
           className.includes('participation-avatars') ||
           className.includes('participants') ||
           className.includes('participant-avatar') ||
+          className.includes('d-flex') ||
+          className.includes('flex-wrap') ||
           element.closest && element.closest('[class*="ActivityHeader"]')) {
         return true;
       }
