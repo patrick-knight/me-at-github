@@ -57,6 +57,19 @@
           'js-issue-row',
           'js-navigation-item-text',
           
+          // Activity feeds and list headers
+          'ActivityHeader-module',
+          'ActivityHeader',
+          'js-activity-header',
+          'activity-header',
+          'list-group-item',
+          'js-issue-row',
+          'js-recent-activity-container',
+          'js-navigation-item',
+          'js-issue-list-item',
+          'notification-list-item',
+          'issue-list-item',
+          
           // Headers and navigation
           'header',
           'site-header',
@@ -121,7 +134,9 @@
           'js-comment-update',
           'edit-comment-hide',
           'js-suggested-changes-contents',
-          'js-file-content'
+          'js-file-content',
+          'IssueCommentViewer-module__IssueCommentBody',
+          'js-comment-container'
         ];
         
         for (const allowedClass of allowedClasses) {
@@ -130,6 +145,26 @@
             return false;
           }
         }
+      }
+      
+      // Additional comprehensive checks for modern GitHub CSS modules
+      const className = element.className || '';
+      
+      // Check for CSS modules (GitHub's modern styling system)
+      if (className.includes('ActivityHeader') || 
+          className.includes('Header-module') ||
+          className.includes('ListItem-module') ||
+          className.includes('IssueItem-module') ||
+          className.includes('navigation') ||
+          className.includes('title') ||
+          element.closest && element.closest('[class*="ActivityHeader"]')) {
+        return true;
+      }
+      
+      // Check data attributes that might indicate list items or headers
+      const dataTestId = element.getAttribute('data-testid');
+      if (dataTestId && (dataTestId.includes('header') || dataTestId.includes('title') || dataTestId.includes('nav'))) {
+        return true;
       }
       
       current = element.parentElement;
@@ -168,7 +203,7 @@
       
       // Skip if this link is in an excluded area (title, header, etc.)
       if (isInExcludedArea(link)) {
-        console.log(`Me @ GitHub: Link ${idx + 1} is in excluded area, skipping`);
+        console.log(`Me @ GitHub: Link ${idx + 1} is in excluded area, skipping. Parent classes:`, link.parentElement?.className);
         return;
       }
       
@@ -198,10 +233,23 @@
     
     console.log('Me @ GitHub: Found', mentions.length, 'mentions in user-mention links');
     
-    // Then search in all other text nodes for plain text mentions
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
+    // Then search in comment body containers for plain text mentions
+    const commentBodySelectors = [
+      '.comment-body',
+      '.js-comment-body', 
+      '.markdown-body',
+      '[class*="IssueCommentViewer-module__IssueCommentBody"]'
+    ];
+    
+    let plainTextCount = 0;
+    commentBodySelectors.forEach(selector => {
+      const containers = document.querySelectorAll(selector);
+      console.log(`Me @ GitHub: Found ${containers.length} containers for selector "${selector}"`);
+      
+      containers.forEach((container) => {
+        const walker = document.createTreeWalker(
+          container,
+          NodeFilter.SHOW_TEXT,
       {
         acceptNode: function(node) {
           // Skip script, style, and our own elements
@@ -221,6 +269,7 @@
           
           // Skip title areas, headers, and navigation elements
           if (isInExcludedArea(node)) {
+            console.log('Me @ GitHub: Excluding text node in:', node.parentElement?.className);
             return NodeFilter.FILTER_REJECT;
           }
           
@@ -233,24 +282,25 @@
         }
       }
     );
-    
-    let node;
-    const pattern = new RegExp(`@${username}\\b`, 'gi');
-    let plainTextCount = 0;
-    while (node = walker.nextNode()) {
-      const text = node.textContent;
-      const matches = [...text.matchAll(pattern)];
-      
-      for (const match of matches) {
-        mentions.push({
-          node: node,
-          text: text,
-          index: match.index,
-          element: node.parentElement
-        });
-        plainTextCount++;
-      }
-    }
+        
+        let node;
+        const pattern = new RegExp(`@${username}\\b`, 'gi');
+        while (node = walker.nextNode()) {
+          const text = node.textContent;
+          const matches = [...text.matchAll(pattern)];
+          
+          for (const match of matches) {
+            mentions.push({
+              node: node,
+              text: text,
+              index: match.index,
+              element: node.parentElement
+            });
+            plainTextCount++;
+          }
+        }
+      });
+    });
     
     console.log('Me @ GitHub: Found', plainTextCount, 'plain text mentions');
     
@@ -736,8 +786,35 @@
 
   // Get line content where the mention appears and create DOM nodes
   function createContextElement(mention) {
-    const fullText = mention.text;
+    const fullText = mention.text || '';
     const mentionText = `@${username}`;
+    
+    // If no text or very short text, show the full text
+    if (!fullText || fullText.length < 50) {
+      const fragment = document.createDocumentFragment();
+      const displayText = fullText || mentionText;
+      
+      // Find and highlight mentions
+      const mentionPattern = new RegExp(`@${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi');
+      let lastIndex = 0;
+      const matches = [...displayText.matchAll(mentionPattern)];
+      
+      matches.forEach((match) => {
+        if (match.index > lastIndex) {
+          fragment.appendChild(document.createTextNode(displayText.substring(lastIndex, match.index)));
+        }
+        const strong = document.createElement('strong');
+        strong.textContent = match[0];
+        fragment.appendChild(strong);
+        lastIndex = match.index + match[0].length;
+      });
+      
+      if (lastIndex < displayText.length) {
+        fragment.appendChild(document.createTextNode(displayText.substring(lastIndex)));
+      }
+      
+      return fragment;
+    }
     
     // Find the line containing the mention
     const lines = fullText.split('\n');
@@ -754,6 +831,15 @@
         break;
       }
       lineStartIndex = lineEndIndex + 1; // +1 for the newline character
+    }
+    
+    // If we didn't find a line, fall back to showing context around the mention
+    if (lineContent === '') {
+      const start = Math.max(0, mention.index - 50);
+      const end = Math.min(fullText.length, mention.index + 50);
+      lineContent = fullText.substring(start, end);
+      if (start > 0) lineContent = '...' + lineContent;
+      if (end < fullText.length) lineContent = lineContent + '...';
     }
     
     // If line is too long, truncate around the mention but prioritize showing full sentences
