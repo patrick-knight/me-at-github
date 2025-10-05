@@ -508,6 +508,21 @@
       
       // Create counter
       createCounter();
+      
+      // Verify UI elements are still in DOM after a short delay
+      setTimeout(() => {
+        const counters = document.querySelectorAll('.me-at-github-counter');
+        const highlights = document.querySelectorAll('.me-at-github-mention-text');
+        console.log('Me @ GitHub: Post-init verification:');
+        console.log('  - Counter elements in DOM:', counters.length);
+        console.log('  - Highlight elements in DOM:', highlights.length);
+        if (counters.length > 0) {
+          const counter = counters[0];
+          console.log('  - Counter visible:', counter.offsetWidth > 0 && counter.offsetHeight > 0);
+          console.log('  - Counter display:', window.getComputedStyle(counter).display);
+          console.log('  - Counter position in DOM:', counter.parentElement?.tagName, counter.parentElement?.className);
+        }
+      }, 100);
     } else {
       console.log('Me @ GitHub: No mentions found to highlight');
     }
