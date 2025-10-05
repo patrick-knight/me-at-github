@@ -47,7 +47,7 @@
       const classList = element.classList;
       if (classList) {
         const excludedClasses = [
-          // Issue and PR titles
+          // Issue, PR and Discussion titles
           'js-issue-title',
           'js-pr-title', 
           'js-discussion-title',
@@ -56,6 +56,8 @@
           'discussion-title',
           'js-issue-row',
           'js-navigation-item-text',
+          'discussion-header',
+          'js-discussion-header',
           
           // Activity feeds and list headers
           'ActivityHeader-module',
@@ -136,6 +138,9 @@
           'js-suggested-changes-contents',
           'js-file-content',
           'IssueCommentViewer-module__IssueCommentBody',
+          'DiscussionCommentViewer-module__DiscussionCommentBody',
+          'discussion-comment-body',
+          'js-discussion-comment-body',
           'js-comment-container'
         ];
         
@@ -238,7 +243,10 @@
       '.comment-body',
       '.js-comment-body', 
       '.markdown-body',
-      '[class*="IssueCommentViewer-module__IssueCommentBody"]'
+      '[class*="IssueCommentViewer-module__IssueCommentBody"]',
+      '[class*="DiscussionCommentViewer-module__DiscussionCommentBody"]',
+      '.discussion-comment-body',
+      '.js-discussion-comment-body'
     ];
     
     let plainTextCount = 0;
@@ -822,7 +830,7 @@
     // Try to get better context from the element
     let contextText = fullText;
     if (mention.element && mention.element.closest) {
-      const container = mention.element.closest('.comment-body, .js-comment-body, .markdown-body');
+      const container = mention.element.closest('.comment-body, .js-comment-body, .markdown-body, .discussion-comment-body, .js-discussion-comment-body, [class*="DiscussionCommentViewer-module__DiscussionCommentBody"]');
       if (container) {
         contextText = container.textContent || fullText;
       }
@@ -1213,10 +1221,28 @@
     console.log('Me @ GitHub: DOM content loaded:', document.body ? 'Yes' : 'No');
     
     // Verify we're on a supported page
-    const supportedPagePattern = /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//;
-    if (!supportedPagePattern.test(location.href)) {
+    const supportedPagePatterns = [
+      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,  // Repository pages
+      /github\.com\/orgs\/[^/]+\/discussions\//,                    // Organization discussions
+      /github\.com\/[^/]+\/[^/]+\/discussions\//                   // Repository discussions (alternative pattern)
+    ];
+    
+    const isSupported = supportedPagePatterns.some(pattern => pattern.test(location.href));
+    if (!isSupported) {
       console.log('Me @ GitHub: Not on a supported page type, skipping initialization');
+      console.log('Me @ GitHub: Current URL:', location.href);
       return;
+    }
+    
+    console.log('Me @ GitHub: Supported page detected');
+    
+    // Log which pattern matched for debugging
+    if (/github\.com\/orgs\/[^/]+\/discussions\//.test(location.href)) {
+      console.log('Me @ GitHub: Detected organization discussion page');
+    } else if (/github\.com\/[^/]+\/[^/]+\/discussions\//.test(location.href)) {
+      console.log('Me @ GitHub: Detected repository discussion page');
+    } else {
+      console.log('Me @ GitHub: Detected issues/PR page');
     }
     
     // Clean up any previous initialization
@@ -1327,9 +1353,16 @@
     }
     
     // Check if we're still on a supported page
-    const supportedPagePattern = /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//;
-    if (!supportedPagePattern.test(location.href)) {
+    const supportedPagePatterns = [
+      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,  // Repository pages
+      /github\.com\/orgs\/[^/]+\/discussions\//,                    // Organization discussions
+      /github\.com\/[^/]+\/[^/]+\/discussions\//                   // Repository discussions (alternative pattern)
+    ];
+    
+    const isSupported = supportedPagePatterns.some(pattern => pattern.test(location.href));
+    if (!isSupported) {
       console.log('Me @ GitHub: Not on supported page, skipping initialization');
+      console.log('Me @ GitHub: Current URL:', location.href);
       return;
     }
     
@@ -1517,8 +1550,14 @@
   
   // Health check: ensure extension is active on supported pages
   setInterval(() => {
-    const supportedPagePattern = /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//;
-    if (supportedPagePattern.test(location.href)) {
+    const supportedPagePatterns = [
+      /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,  // Repository pages
+      /github\.com\/orgs\/[^/]+\/discussions\//,                    // Organization discussions
+      /github\.com\/[^/]+\/[^/]+\/discussions\//                   // Repository discussions (alternative pattern)
+    ];
+    
+    const isSupported = supportedPagePatterns.some(pattern => pattern.test(location.href));
+    if (isSupported) {
       const existingCounter = document.querySelector('.me-at-github-counter');
       const bodyText = document.body.textContent || '';
       const hasUsername = bodyText.includes(`@${username || 'unknown'}`);
