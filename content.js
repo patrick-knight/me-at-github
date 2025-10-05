@@ -2,6 +2,9 @@
 
 (function() {
   'use strict';
+  
+  // Immediate console log to verify script loading
+  console.log('🚀 Me @ GitHub extension loaded!', new Date().toISOString());
 
   let username = null;
   let mentions = [];
@@ -242,6 +245,36 @@
     
     element.appendChild(nav);
     
+    let hideTimeout;
+    let isNavVisible = false;
+    
+    // Show navigation on hover or active
+    const showNav = () => {
+      clearTimeout(hideTimeout);
+      nav.style.display = 'flex';
+      isNavVisible = true;
+    };
+    
+    // Hide navigation with delay
+    const hideNav = () => {
+      hideTimeout = setTimeout(() => {
+        nav.style.display = 'none';
+        isNavVisible = false;
+      }, 2000); // Keep visible for 2 seconds
+    };
+    
+    // Keep nav visible when hovering over it
+    nav.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimeout);
+    });
+    
+    nav.addEventListener('mouseleave', hideNav);
+    
+    // Show nav on element hover/focus
+    element.addEventListener('mouseenter', showNav);
+    element.addEventListener('focus', showNav);
+    element.addEventListener('mouseleave', hideNav);
+    
     // Add event listeners
     const prevBtn = nav.querySelector('.me-at-github-prev');
     const nextBtn = nav.querySelector('.me-at-github-next');
@@ -249,11 +282,19 @@
     prevBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       navigateToMention(index - 1);
+      // Hide nav immediately after navigation
+      clearTimeout(hideTimeout);
+      nav.style.display = 'none';
+      isNavVisible = false;
     });
     
     nextBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       navigateToMention(index + 1);
+      // Hide nav immediately after navigation
+      clearTimeout(hideTimeout);
+      nav.style.display = 'none';
+      isNavVisible = false;
     });
   }
 
@@ -291,44 +332,101 @@
     const count = mentions.length;
     if (count === 0) return;
     
-    // Find the page title - try multiple selectors for different GitHub layouts
-    // Start with more specific selectors and fall back to general ones
-    const selectors = [
-      'h1.gh-header-title',           // Most common: issue/PR title container
-      'h1.js-issue-title',            // Alternative issue title
-      'h1[data-testid="issue-title"]', // New GitHub UI
-      '.gh-header-title',             // Without h1 restriction
-      'bdi.js-issue-title',           // Title text element
-      'span.js-issue-title',          // Alternative title text element
-      'h1'                            // Last resort: any h1 on the page
+    // Log current page info for debugging
+    console.log('Me @ GitHub: Current page URL:', location.href);
+    console.log('Me @ GitHub: Page title:', document.title);
+    
+    // Find the issue/PR number element first - this is our primary target
+    const issueSelectors = [
+      '.gh-header-number',               // Issue/PR number in header
+      'span.f1-light',                   // Alternative number styling  
+      '.js-issue-number',                // JS issue number
+      '.gh-header-title .f1-light',      // Number within title
+      'h1 .f1-light',                    // Generic number in h1
+      '[data-testid=\"issue-title\"] .f1-light', // New GitHub UI\n      'h1 span.color-fg-muted',          // GitHub's muted text styling\n      'h1 .color-fg-muted',              // Alternative muted styling\n      'span[data-testid=\"issue-number\"]', // Possible data attribute\n      '.issue-title-actions + h1 span',  // Adjacent to actions\n      'h1 > span:first-child',           // First span in h1 (often the number)\n      '.js-issue-title span',            // Span within issue title\n      'bdi span',                        // Span within bdi element\n      '.gh-header-meta .color-fg-muted', // Header meta with muted color\n      'span[title*=\"#\"]'                // Span with # in title attribute
     ];
     
-    let titleElement = null;
+    let issueNumberElement = null;
     let selectorUsed = null;
     
-    for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      // Verify element is visible and in the document
-      if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
-        titleElement = element;
-        selectorUsed = selector;
-        console.log(`Me @ GitHub: Found visible title element using selector: "${selector}"`);
-        break;
-      } else if (element) {
-        console.log(`Me @ GitHub: Found title element with selector "${selector}" but it's not visible (w:${element.offsetWidth}, h:${element.offsetHeight})`);
+    console.log('Me @ GitHub: Looking for issue number element...');
+    for (const selector of issueSelectors) {
+      const elements = document.querySelectorAll(selector);
+      console.log(`Me @ GitHub: Selector "${selector}" found ${elements.length} elements`);
+      
+      for (const element of elements) {
+        if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
+          console.log(`Me @ GitHub: Checking element with text: "${element.textContent.trim()}"`);
+          // Check if it contains a # (issue/PR number)
+          if (element.textContent.includes('#')) {
+            issueNumberElement = element;
+            selectorUsed = selector;
+            console.log(`Me @ GitHub: ✓ Found issue number element using selector: "${selector}"`);
+            console.log(`Me @ GitHub: Element text: "${element.textContent.trim()}"`);
+            console.log(`Me @ GitHub: Element HTML:`, element.outerHTML.substring(0, 200));
+            break;
+          }
+        }
+      }
+      if (issueNumberElement) break;
+    }
+    
+    // Fallback to title element if no issue number found
+    if (!issueNumberElement) {
+      console.log('Me @ GitHub: No issue number element found, falling back to title element...');
+      const titleSelectors = [
+        'h1.gh-header-title',           // Most common: issue/PR title container
+        'h1.js-issue-title',            // Alternative issue title
+        'h1[data-testid="issue-title"]', // New GitHub UI
+        '[data-testid="issue-title"]',   // New GitHub UI without h1
+        'h1.d-flex',                    // GitHub's flexbox h1
+        '.gh-header-title',             // Without h1 restriction
+        'bdi.js-issue-title',           // Title text element
+        'span.js-issue-title',          // Alternative title text element
+        'main h1',                      // H1 in main content
+        'h1'                            // Last resort: any h1 on the page
+      ];
+      
+      for (const selector of titleSelectors) {
+        const elements = document.querySelectorAll(selector);
+        console.log(`Me @ GitHub: Title selector "${selector}" found ${elements.length} elements`);
+        
+        for (const element of elements) {
+          if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
+            issueNumberElement = element;
+            selectorUsed = selector;
+            console.log(`Me @ GitHub: ✓ Using title element with selector: "${selector}"`);
+            console.log(`Me @ GitHub: Title element text: "${element.textContent.trim().substring(0, 100)}..."`);
+            console.log(`Me @ GitHub: Title element HTML:`, element.outerHTML.substring(0, 200));
+            break;
+          }
+        }
+        if (issueNumberElement) break;
       }
     }
     
-    if (!titleElement) {
-      console.log('Me @ GitHub: Could not find title element with any selector');
-      console.log('Me @ GitHub: Available h1 elements:', document.querySelectorAll('h1'));
-      console.log('Me @ GitHub: Page body classes:', document.body.className);
+    if (!issueNumberElement) {
+      console.log('Me @ GitHub: ❌ Could not find issue number or title element');
+      console.log('Me @ GitHub: Debugging - Available h1 elements:');
+      document.querySelectorAll('h1').forEach((h1, index) => {
+        console.log(`  H1 #${index + 1}:`, h1.outerHTML.substring(0, 150));
+        console.log(`    Text: "${h1.textContent.trim().substring(0, 100)}"`);
+        console.log(`    Classes: "${h1.className}"`);
+        console.log(`    Visible: ${h1.offsetWidth > 0 && h1.offsetHeight > 0}`);
+      });
+      console.log('Me @ GitHub: Debugging - All spans with # in text:');
+      document.querySelectorAll('span').forEach((span, index) => {
+        if (span.textContent.includes('#')) {
+          console.log(`  Span #${index + 1} with #:`, span.outerHTML.substring(0, 100));
+          console.log(`    Text: "${span.textContent.trim()}"`);
+        }
+      });
       return;
     }
     
-    console.log('Me @ GitHub: Title element tag:', titleElement.tagName);
-    console.log('Me @ GitHub: Title element classes:', titleElement.className);
-    console.log('Me @ GitHub: Title element HTML:', titleElement.outerHTML.substring(0, 200));
+    console.log('Me @ GitHub: Target element tag:', issueNumberElement.tagName);
+    console.log('Me @ GitHub: Target element classes:', issueNumberElement.className);
+    console.log('Me @ GitHub: Target element HTML:', issueNumberElement.outerHTML.substring(0, 200));
     
     // Create counter badge
     const counter = document.createElement('span');
@@ -342,17 +440,62 @@
       toggleDropdown(counter);
     });
     
-    // Insert the counter as a child of the title element (at the end)
-    // This ensures it appears inline with the title text
-    titleElement.appendChild(counter);
-    console.log('Me @ GitHub: Counter badge inserted as child of title element');
-    console.log('Me @ GitHub: Counter element:', counter);
-    console.log('Me @ GitHub: Counter is visible:', counter.offsetWidth > 0 && counter.offsetHeight > 0);
-    console.log('Me @ GitHub: Counter computed style:', window.getComputedStyle(counter).display);
+    // Insert the counter after the target element
+    issueNumberElement.parentNode.insertBefore(counter, issueNumberElement.nextSibling);
+    console.log('Me @ GitHub: Counter badge inserted after target element');
     
     // Create dropdown
     createDropdown(counter);
     console.log('Me @ GitHub: Dropdown created');
+    
+    // Create sticky header counter
+    createStickyCounter(count);
+  }
+  
+  // Create sticky header counter that appears when scrolling
+  function createStickyCounter(count) {
+    // Remove any existing sticky counter
+    const existingStickyCounter = document.getElementById('me-at-github-sticky-counter');
+    if (existingStickyCounter) {
+      existingStickyCounter.remove();
+    }
+    
+    // Create sticky counter
+    const stickyCounter = document.createElement('div');
+    stickyCounter.id = 'me-at-github-sticky-counter';
+    stickyCounter.classList.add('me-at-github-sticky-counter');
+    stickyCounter.textContent = `@${count}`;
+    stickyCounter.title = `${count} mention${count !== 1 ? 's' : ''} of @${username}`;
+    
+    // Add click handler
+    stickyCounter.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Scroll to first mention when clicked
+      if (mentions.length > 0) {
+        navigateToMention(0);
+      }
+    });
+    
+    // Insert into header area
+    document.body.appendChild(stickyCounter);
+    
+    // Show/hide based on scroll position
+    let isHeaderVisible = true;
+    const checkScroll = () => {
+      const headerHeight = 100; // Approximate header height
+      const scrolled = window.scrollY > headerHeight;
+      
+      if (scrolled && isHeaderVisible) {
+        stickyCounter.style.display = 'flex';
+        isHeaderVisible = false;
+      } else if (!scrolled && !isHeaderVisible) {
+        stickyCounter.style.display = 'none';
+        isHeaderVisible = true;
+      }
+    };
+    
+    window.addEventListener('scroll', checkScroll);
+    checkScroll(); // Initial check
   }
 
   // Create the dropdown menu
@@ -399,6 +542,13 @@
     // Close dropdown when clicking outside
     document.addEventListener('click', () => {
       dropdown.style.display = 'none';
+    });
+    
+    // Reposition dropdown on window resize if it's visible
+    window.addEventListener('resize', () => {
+      if (dropdown.style.display === 'block') {
+        positionDropdown(counter, dropdown);
+      }
     });
   }
 
@@ -448,15 +598,76 @@
     return fragment;
   }
 
-  // Toggle dropdown visibility
+  // Toggle dropdown visibility with smart positioning
   function toggleDropdown(counter) {
     const dropdown = counter.querySelector('.me-at-github-dropdown');
     if (!dropdown) return;
     
     if (dropdown.style.display === 'none') {
       dropdown.style.display = 'block';
+      
+      // Smart positioning to keep dropdown on screen
+      positionDropdown(counter, dropdown);
     } else {
       dropdown.style.display = 'none';
+    }
+  }
+  
+  // Position dropdown to stay within viewport bounds
+  function positionDropdown(counter, dropdown) {
+    // Reset positioning classes
+    dropdown.classList.remove('me-at-github-dropdown-left', 'me-at-github-dropdown-up', 'me-at-github-dropdown-center', 'me-at-github-dropdown-mobile');
+    
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const scrollTop = window.scrollY;
+    
+    // Get counter position
+    const counterRect = counter.getBoundingClientRect();
+    const counterTop = counterRect.top + scrollTop;
+    const counterLeft = counterRect.left;
+    const counterRight = counterRect.right;
+    const counterBottom = counterRect.bottom + scrollTop;
+    
+    // Get dropdown dimensions (temporarily make it visible to measure)
+    const originalDisplay = dropdown.style.display;
+    const originalVisibility = dropdown.style.visibility;
+    dropdown.style.visibility = 'hidden';
+    dropdown.style.display = 'block';
+    
+    const dropdownRect = dropdown.getBoundingClientRect();
+    const dropdownWidth = dropdownRect.width;
+    const dropdownHeight = dropdownRect.height;
+    
+    // Restore original visibility
+    dropdown.style.display = originalDisplay;
+    dropdown.style.visibility = originalVisibility;
+    
+    // Check horizontal positioning
+    const spaceOnRight = viewportWidth - counterRight;
+    const spaceOnLeft = counterLeft;
+    
+    // For very small screens (mobile), always use full width
+    if (viewportWidth < 600) {
+      dropdown.classList.add('me-at-github-dropdown-mobile');
+    }
+    // If dropdown would go off the right edge, position it to the left
+    else if (spaceOnRight < dropdownWidth && spaceOnLeft >= dropdownWidth) {
+      dropdown.classList.add('me-at-github-dropdown-left');
+    }
+    // If there's not enough space on either side, center it and allow scrolling
+    else if (spaceOnRight < dropdownWidth && spaceOnLeft < dropdownWidth) {
+      dropdown.classList.add('me-at-github-dropdown-center');
+    }
+    
+    // Check vertical positioning
+    const spaceBelow = viewportHeight - (counterRect.bottom - scrollTop);
+    const spaceAbove = counterRect.top - scrollTop;
+    
+    // If dropdown would go off the bottom and there's more space above, position it above
+    if (spaceBelow < dropdownHeight && spaceAbove >= dropdownHeight) {
+      dropdown.classList.add('me-at-github-dropdown-up');
     }
   }
 
@@ -464,6 +675,12 @@
   function cleanup() {
     // Remove existing counters
     document.querySelectorAll('.me-at-github-counter').forEach(el => el.remove());
+    
+    // Remove existing sticky counter
+    const stickyCounter = document.getElementById('me-at-github-sticky-counter');
+    if (stickyCounter) {
+      stickyCounter.remove();
+    }
     
     // Remove existing highlights
     document.querySelectorAll('.me-at-github-mention-text').forEach(el => {
@@ -488,6 +705,15 @@
   // Initialize the extension
   function init() {
     console.log('Me @ GitHub: Initializing on', location.href);
+    console.log('Me @ GitHub: Page readyState:', document.readyState);
+    console.log('Me @ GitHub: DOM content loaded:', document.body ? 'Yes' : 'No');
+    
+    // Verify we're on a supported page
+    const supportedPagePattern = /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//;
+    if (!supportedPagePattern.test(location.href)) {
+      console.log('Me @ GitHub: Not on a supported page type, skipping initialization');
+      return;
+    }
     
     // Clean up any previous initialization
     cleanup();
@@ -527,8 +753,10 @@
           console.log('  - Counter position in DOM:', counter.parentElement?.tagName, counter.parentElement?.className);
         }
       }, 100);
+      return true; // Success
     } else {
       console.log('Me @ GitHub: No mentions found to highlight');
+      return false; // No mentions found
     }
   }
 
@@ -558,24 +786,92 @@
     }
   }
 
+  // Run when DOM is ready with multiple initialization attempts
+  function initializeWithRetry(attempt = 1, maxAttempts = 5) {
+    console.log(`Me @ GitHub: Initialization attempt ${attempt}/${maxAttempts}`);
+    
+    if (attempt > maxAttempts) {
+      console.log('Me @ GitHub: Max initialization attempts reached');
+      return;
+    }
+    
+    // Try to initialize
+    const success = init();
+    
+    // If no mentions found and we haven't reached max attempts, try again
+    if (mentions.length === 0 && attempt < maxAttempts) {
+      console.log(`Me @ GitHub: No mentions found on attempt ${attempt}, retrying in ${1000 * attempt}ms...`);
+      setTimeout(() => initializeWithRetry(attempt + 1, maxAttempts), 1000 * attempt);
+    }
+  }
+  
   // Run when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 1000));
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => initializeWithRetry(), 1000);
+    });
   } else {
     // Add a delay to ensure GitHub's dynamic content is loaded
-    setTimeout(init, 1000);
+    setTimeout(() => initializeWithRetry(), 1000);
   }
 
   // Setup keyboard shortcuts once (no cleanup needed as it's a single global handler)
   document.addEventListener('keydown', handleKeyboardShortcut);
 
-  // Listen for GitHub's PJAX navigation
+  // Listen for GitHub's PJAX navigation and content changes
   let lastUrl = location.href;
-  const observer = new MutationObserver(() => {
+  const observer = new MutationObserver((mutations) => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
-      // Re-initialize after navigation with longer delay to ensure page is fully loaded
-      setTimeout(init, 1500);
+      console.log('Me @ GitHub: Page navigation detected, re-initializing...');
+      // Re-initialize after navigation with retry logic
+      setTimeout(() => initializeWithRetry(), 1500);
+      return;
+    }
+    
+    // Check for content changes that might affect mentions
+    let shouldRehighlight = false;
+    for (const mutation of mutations) {
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        // Check if new content was added that might contain mentions
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Look for comment content or timeline items
+            if (node.classList && (node.classList.contains('js-timeline-item') ||
+                                   node.classList.contains('js-comment') ||
+                                   node.querySelector && node.querySelector('.js-comment'))) {
+              shouldRehighlight = true;
+              break;
+            }
+          }
+        }
+        if (shouldRehighlight) break;
+      }
+    }
+    
+    if (shouldRehighlight && username) {
+      console.log('Me @ GitHub: New content detected, re-highlighting mentions');
+      // Re-find and highlight mentions after a short delay
+      setTimeout(() => {
+        // Find new mentions without cleaning up existing ones first
+        const newMentions = findMentions();
+        if (newMentions.length > mentions.length) {
+          mentions = newMentions;
+          // Only highlight the new mentions
+          highlightMentions();
+          // Update counter if needed
+          const counter = document.querySelector('.me-at-github-counter');
+          if (counter) {
+            counter.textContent = `@${mentions.length}`;
+            counter.title = `${mentions.length} mention${mentions.length !== 1 ? 's' : ''} of @${username}`;
+          }
+          const stickyCounter = document.getElementById('me-at-github-sticky-counter');
+          if (stickyCounter) {
+            stickyCounter.textContent = `@${mentions.length}`;
+            stickyCounter.title = `${mentions.length} mention${mentions.length !== 1 ? 's' : ''} of @${username}`;
+          }
+        }
+      }, 500);
     }
   });
   
@@ -584,6 +880,12 @@
     subtree: true
   });
 
+  // Expose force initialization function for debugging
+  window.meAtGitHubForceInit = function() {
+    console.log('Me @ GitHub: Force initialization requested');
+    initializeWithRetry(1, 1); // Single attempt
+  };
+  
   // Expose diagnostic function for debugging
   window.meAtGitHubDiagnostics = function() {
     console.log('=== Me @ GitHub Diagnostics ===');
@@ -637,5 +939,6 @@
   };
   
   console.log('Me @ GitHub: Diagnostics function available. Run meAtGitHubDiagnostics() to check extension state.');
+  console.log('Me @ GitHub: Force init function available. Run meAtGitHubForceInit() to force re-initialization.');
 
 })();

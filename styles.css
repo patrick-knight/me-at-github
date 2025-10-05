@@ -22,6 +22,31 @@
   background: #0860ca;
 }
 
+/* Sticky counter that appears when scrolling */
+.me-at-github-sticky-counter {
+  display: none;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  align-items: center;
+  padding: 8px 12px;
+  background: #0969da !important;
+  color: white !important;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  transition: all 0.2s ease;
+  border: 2px solid white;
+}
+
+.me-at-github-sticky-counter:hover {
+  background: #0860ca !important;
+  transform: scale(1.05);
+}
+
 /* Dropdown menu */
 .me-at-github-dropdown {
   position: absolute;
@@ -36,6 +61,32 @@
   max-height: 400px;
   overflow-y: auto;
   z-index: 1000;
+}
+
+/* Dropdown positioning variants */
+.me-at-github-dropdown-left {
+  right: auto;
+  left: 0;
+}
+
+.me-at-github-dropdown-center {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90vw;
+}
+
+.me-at-github-dropdown-up {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+.me-at-github-dropdown-mobile {
+  right: 10px;
+  left: 10px;
+  width: auto;
+  min-width: auto;
+  max-width: none;
 }
 
 .me-at-github-dropdown-list {
@@ -132,14 +183,16 @@
   padding: 4px;
   box-shadow: 0 4px 12px rgba(140, 149, 159, 0.2);
   white-space: nowrap;
-  z-index: 100;
-}
-
-.me-at-github-mention-text:hover .me-at-github-nav,
-.me-at-github-mention-text.active .me-at-github-nav {
-  display: flex;
+  z-index: 1000;
   align-items: center;
   gap: 4px;
+}
+
+/* Navigation shows on hover and stays visible longer */
+.me-at-github-mention-text:hover .me-at-github-nav,
+.me-at-github-mention-text.active .me-at-github-nav,
+.me-at-github-nav:hover {
+  display: flex !important;
 }
 
 .me-at-github-nav-btn {
@@ -181,6 +234,10 @@
     box-shadow: 0 8px 24px rgba(1, 4, 9, 0.3);
   }
   
+  .me-at-github-dropdown-center {
+    box-shadow: 0 8px 24px rgba(1, 4, 9, 0.4);
+  }
+  
   .me-at-github-dropdown-item {
     border-bottom-color: #21262d;
   }
@@ -216,6 +273,15 @@
   
   .me-at-github-link-wrapper a.user-mention {
     color: #58a6ff;
+  }
+  
+  .me-at-github-sticky-counter {
+    background: #58a6ff !important;
+    border-color: #161b22;
+  }
+  
+  .me-at-github-sticky-counter:hover {
+    background: #4493f8 !important;
   }
   
   .me-at-github-nav {

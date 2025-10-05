@@ -5,10 +5,12 @@ A Chrome extension that helps you easily find and navigate to every place you've
 ## Features
 
 - 🔍 **Auto-detection**: Automatically finds all mentions of your GitHub username in the `@username` format
-- 📊 **Mention Counter**: Displays a badge at the end of the page title showing the total count of mentions
+- 📊 **Mention Counter**: Displays a badge next to the issue/PR number showing the total count of mentions
+- 📌 **Sticky Counter**: Shows a floating counter in the top-right corner when scrolling down the page
 - 📋 **Quick Navigation**: Click the counter to see a dropdown list of all mentions with context
 - 🎯 **Jump to Mention**: Click any item in the list to scroll directly to that mention
-- ⬅️➡️ **Prev/Next Controls**: Hover over any highlighted mention to see navigation buttons for moving between mentions
+- ⬅️➡️ **Prev/Next Controls**: Hover over any highlighted mention to see navigation buttons (stay visible longer for easier use)
+- 🔄 **Dynamic Updates**: Automatically detects new mentions when "load more" content is added
 - 🎨 **GitHub-styled UI**: Seamlessly integrates with GitHub's interface (supports both light and dark modes)
 
 ## Quick Start
@@ -30,11 +32,13 @@ A Chrome extension that helps you easily find and navigate to every place you've
 ## Usage
 
 1. Navigate to any GitHub issue, pull request, or discussion
-2. If you're mentioned anywhere on the page, you'll see a blue badge (e.g., `@3`) next to the page title
-3. Click the badge to open a dropdown showing all mentions with surrounding context
-4. Click any item in the dropdown to jump directly to that mention
-5. Hover over any highlighted mention to see prev/next navigation buttons
-6. Use the navigation buttons to move between mentions sequentially
+2. If you're mentioned anywhere on the page, you'll see a blue badge (e.g., `@3`) next to the issue/PR number
+3. When scrolling down, a floating counter appears in the top-right corner for easy access
+4. Click any counter to open a dropdown showing all mentions with surrounding context
+5. Click any item in the dropdown to jump directly to that mention
+6. Hover over any highlighted mention to see prev/next navigation buttons (they stay visible for 2 seconds)
+7. Use the navigation buttons to move between mentions sequentially
+8. The extension automatically updates when new content loads (like "load more" buttons)
 
 ### Keyboard Shortcuts
 
