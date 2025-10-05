@@ -307,11 +307,15 @@
     let selectorUsed = null;
     
     for (const selector of selectors) {
-      titleElement = document.querySelector(selector);
-      if (titleElement) {
+      const element = document.querySelector(selector);
+      // Verify element is visible and in the document
+      if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
+        titleElement = element;
         selectorUsed = selector;
-        console.log(`Me @ GitHub: Found title element using selector: "${selector}"`);
+        console.log(`Me @ GitHub: Found visible title element using selector: "${selector}"`);
         break;
+      } else if (element) {
+        console.log(`Me @ GitHub: Found title element with selector "${selector}" but it's not visible (w:${element.offsetWidth}, h:${element.offsetHeight})`);
       }
     }
     
@@ -556,10 +560,10 @@
 
   // Run when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 500));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 1000));
   } else {
-    // Add a small delay to ensure GitHub's dynamic content is loaded
-    setTimeout(init, 500);
+    // Add a delay to ensure GitHub's dynamic content is loaded
+    setTimeout(init, 1000);
   }
 
   // Setup keyboard shortcuts once (no cleanup needed as it's a single global handler)
@@ -571,7 +575,7 @@
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       // Re-initialize after navigation with longer delay to ensure page is fully loaded
-      setTimeout(init, 1000);
+      setTimeout(init, 1500);
     }
   });
   
