@@ -745,11 +745,6 @@
       li.classList.add('me-at-github-dropdown-item');
       li.setAttribute('data-mention-index', index.toString());
       
-      // Create index span
-      const indexSpan = document.createElement('span');
-      indexSpan.classList.add('me-at-github-dropdown-index');
-      indexSpan.textContent = `#${index + 1}`;
-      
       // Create context span with safe DOM manipulation
       const contextSpan = document.createElement('span');
       contextSpan.classList.add('me-at-github-dropdown-context');
@@ -764,7 +759,6 @@
         contextSpan.textContent = `Mention #${index + 1}: @${username}`;
       }
       
-      li.appendChild(indexSpan);
       li.appendChild(contextSpan);
       
       li.addEventListener('click', (e) => {
