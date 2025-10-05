@@ -705,7 +705,7 @@
     // Create counter badge
     const counter = document.createElement('span');
     counter.classList.add('me-at-github-counter');
-    counter.textContent = `@${count}`;
+    counter.textContent = `${count} mention${count !== 1 ? 's' : ''}`;
     counter.title = `${count} mention${count !== 1 ? 's' : ''} of @${username}`;
     
     // Add click handler to toggle dropdown
@@ -738,7 +738,7 @@
     const stickyCounter = document.createElement('div');
     stickyCounter.id = 'me-at-github-sticky-counter';
     stickyCounter.classList.add('me-at-github-sticky-counter');
-    stickyCounter.textContent = `@${count}`;
+    stickyCounter.textContent = `${count} mention${count !== 1 ? 's' : ''}`;
     stickyCounter.title = `${count} mention${count !== 1 ? 's' : ''} of @${username}`;
     
         // Add click handler
