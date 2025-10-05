@@ -153,7 +153,9 @@
       }
       
       // Additional comprehensive checks for modern GitHub CSS modules
-      const className = element.className || '';
+      const className = (element.className && element.className.toString) ? 
+        element.className.toString() : 
+        (element.className || '');
       
       // Check for CSS modules (GitHub's modern styling system)
       if (className.includes('ActivityHeader') || 
