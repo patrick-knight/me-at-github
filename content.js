@@ -27,6 +27,117 @@
   }
 
   // Find all mentions of the username in @<username> format
+  // Helper function to check if a node is in an excluded area (titles, headers, navigation)
+  function isInExcludedArea(node) {
+    let current = node;
+    
+    // Walk up the DOM tree to check for excluded areas
+    while (current && current !== document.body) {
+      const element = current.nodeType === Node.TEXT_NODE ? current.parentElement : current;
+      
+      if (!element) break;
+      
+      // Check for title areas and headers
+      const tagName = element.tagName?.toLowerCase();
+      if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'title'].includes(tagName)) {
+        return true;
+      }
+      
+      // Check for GitHub-specific title and header classes
+      const classList = element.classList;
+      if (classList) {
+        const excludedClasses = [
+          // Issue and PR titles
+          'js-issue-title',
+          'js-pr-title', 
+          'js-discussion-title',
+          'issue-title',
+          'pr-title',
+          'discussion-title',
+          'js-issue-row',
+          'js-navigation-item-text',
+          
+          // Headers and navigation
+          'header',
+          'site-header',
+          'js-navigation-item',
+          'js-repo-nav',
+          'subnav',
+          'tabnav',
+          'breadcrumb',
+          'pagehead',
+          'repohead',
+          
+          // Commit and timeline headers
+          'commit-title',
+          'commit-message',
+          'timeline-comment-header',
+          'timeline-comment-header-text',
+          'timeline-comment-actions',
+          'js-timeline-item',
+          
+          // User/author areas in headers
+          'hx_hit-user',
+          'commit-author',
+          'author',
+          'text-bold',
+          
+          // File headers and code areas
+          'file-header',
+          'file-info',
+          'js-file-header',
+          'blob-code-hunk',
+          
+          // Notification areas
+          'notification-list-item-title',
+          'notification-list-item-link'
+        ];
+        
+        for (const excludedClass of excludedClasses) {
+          if (classList.contains(excludedClass)) {
+            return true;
+          }
+        }
+        
+        // Check for role attributes that indicate navigation or headers
+        const role = element.getAttribute('role');
+        if (['navigation', 'banner', 'header', 'menubar', 'toolbar'].includes(role)) {
+          return true;
+        }
+      }
+      
+      // Check for common header/title selectors by ID or data attributes
+      const id = element.id;
+      if (id && (id.includes('header') || id.includes('title') || id.includes('nav'))) {
+        return true;
+      }
+      
+      // Check if we're inside the actual comment body areas (these are allowed)
+      if (classList) {
+        const allowedClasses = [
+          'comment-body',
+          'js-comment-body',
+          'markdown-body',
+          'js-comment-update',
+          'edit-comment-hide',
+          'js-suggested-changes-contents',
+          'js-file-content'
+        ];
+        
+        for (const allowedClass of allowedClasses) {
+          if (classList.contains(allowedClass)) {
+            // We're in a comment body, so this is allowed (return false)
+            return false;
+          }
+        }
+      }
+      
+      current = element.parentElement;
+    }
+    
+    return false;
+  }
+
   function findMentions() {
     if (!username) return [];
     
@@ -54,6 +165,12 @@
       const linkHref = link.getAttribute('href') || link.href;
       
       console.log(`Me @ GitHub: Link ${idx + 1}: text="${linkText}", href="${linkHref}"`);
+      
+      // Skip if this link is in an excluded area (title, header, etc.)
+      if (isInExcludedArea(link)) {
+        console.log(`Me @ GitHub: Link ${idx + 1} is in excluded area, skipping`);
+        return;
+      }
       
       // Check if this link mentions the current user
       // GitHub's mention links have href like "/username" or "https://github.com/username"
@@ -99,6 +216,11 @@
           
           // Skip if parent is a link that might be a mention (already processed above)
           if (parent.tagName === 'A' && parent.getAttribute('href')?.includes(`/${username}`)) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          
+          // Skip title areas, headers, and navigation elements
+          if (isInExcludedArea(node)) {
             return NodeFilter.FILTER_REJECT;
           }
           
