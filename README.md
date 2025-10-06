@@ -79,4 +79,4 @@ This extension:
 
 ## License
 
-ISC
+MIT
