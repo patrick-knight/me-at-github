@@ -1134,7 +1134,6 @@
     dropdown.style.visibility = originalVisibility;
     
     // Calculate horizontal position
-    let left, right;
     const spaceOnRight = viewportWidth - counterRect.right;
     const spaceOnLeft = counterRect.left;
     
@@ -1144,31 +1143,27 @@
       dropdown.style.left = padding + 'px';
       dropdown.style.right = padding + 'px';
     } else {
-      // Try to align with right edge of counter first (default)
-      right = viewportWidth - counterRect.right;
+      // Default: align dropdown's right edge with counter's right edge
+      const rightAlignedLeft = counterRect.right - dropdownWidth;
       
-      // If dropdown would go off the left edge, align with left edge instead
-      if (counterRect.right - dropdownWidth < padding) {
-        left = counterRect.left;
-        right = '';
-        dropdown.classList.add('me-at-github-dropdown-left');
-      }
-      
-      // If still doesn't fit, constrain to viewport with padding
-      if (left !== undefined) {
-        const maxRight = viewportWidth - padding;
-        if (left + dropdownWidth > maxRight) {
-          // Center it if it doesn't fit either way
-          left = Math.max(padding, (viewportWidth - dropdownWidth) / 2);
+      // Check if right-aligned dropdown would go off the left edge
+      if (rightAlignedLeft < padding) {
+        // Not enough space on the left, try left-aligning with counter's left edge
+        const leftAlignedRight = counterRect.left + dropdownWidth;
+        
+        if (leftAlignedRight > viewportWidth - padding) {
+          // Doesn't fit either way - center it with padding
+          const centeredLeft = Math.max(padding, (viewportWidth - dropdownWidth) / 2);
+          dropdown.style.left = centeredLeft + 'px';
           dropdown.classList.add('me-at-github-dropdown-center');
+        } else {
+          // Left-align with counter
+          dropdown.style.left = counterRect.left + 'px';
+          dropdown.classList.add('me-at-github-dropdown-left');
         }
-        dropdown.style.left = left + 'px';
       } else {
-        // Ensure it doesn't go off the left edge when right-aligned
-        if (right + dropdownWidth > viewportWidth - padding) {
-          right = padding;
-        }
-        dropdown.style.right = right + 'px';
+        // Right-align with counter (default, most common case)
+        dropdown.style.left = rightAlignedLeft + 'px';
       }
     }
     
