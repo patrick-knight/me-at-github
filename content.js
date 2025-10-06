@@ -1104,20 +1104,20 @@
   
   // Position dropdown to stay within viewport bounds
   function positionDropdown(counter, dropdown) {
-    // Reset positioning classes
+    // Reset positioning classes and inline styles
     dropdown.classList.remove('me-at-github-dropdown-left', 'me-at-github-dropdown-up', 'me-at-github-dropdown-center', 'me-at-github-dropdown-mobile');
+    dropdown.style.top = '';
+    dropdown.style.left = '';
+    dropdown.style.right = '';
+    dropdown.style.bottom = '';
     
     // Get viewport dimensions
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const scrollTop = window.scrollY;
+    const padding = 16; // Minimum padding from viewport edges
     
-    // Get counter position
+    // Get counter position (fixed positioning uses viewport coordinates)
     const counterRect = counter.getBoundingClientRect();
-    const counterTop = counterRect.top + scrollTop;
-    const counterLeft = counterRect.left;
-    const counterRight = counterRect.right;
-    const counterBottom = counterRect.bottom + scrollTop;
     
     // Get dropdown dimensions (temporarily make it visible to measure)
     const originalDisplay = dropdown.style.display;
@@ -1133,30 +1133,63 @@
     dropdown.style.display = originalDisplay;
     dropdown.style.visibility = originalVisibility;
     
-    // Check horizontal positioning
-    const spaceOnRight = viewportWidth - counterRight;
-    const spaceOnLeft = counterLeft;
+    // Calculate horizontal position
+    let left, right;
+    const spaceOnRight = viewportWidth - counterRect.right;
+    const spaceOnLeft = counterRect.left;
     
     // For very small screens (mobile), always use full width
     if (viewportWidth < 600) {
       dropdown.classList.add('me-at-github-dropdown-mobile');
-    }
-    // If dropdown would go off the right edge, position it to the left
-    else if (spaceOnRight < dropdownWidth && spaceOnLeft >= dropdownWidth) {
-      dropdown.classList.add('me-at-github-dropdown-left');
-    }
-    // If there's not enough space on either side, center it and allow scrolling
-    else if (spaceOnRight < dropdownWidth && spaceOnLeft < dropdownWidth) {
-      dropdown.classList.add('me-at-github-dropdown-center');
+      dropdown.style.left = padding + 'px';
+      dropdown.style.right = padding + 'px';
+    } else {
+      // Try to align with right edge of counter first (default)
+      right = viewportWidth - counterRect.right;
+      
+      // If dropdown would go off the left edge, align with left edge instead
+      if (counterRect.right - dropdownWidth < padding) {
+        left = counterRect.left;
+        right = '';
+        dropdown.classList.add('me-at-github-dropdown-left');
+      }
+      
+      // If still doesn't fit, constrain to viewport with padding
+      if (left !== undefined) {
+        const maxRight = viewportWidth - padding;
+        if (left + dropdownWidth > maxRight) {
+          // Center it if it doesn't fit either way
+          left = Math.max(padding, (viewportWidth - dropdownWidth) / 2);
+          dropdown.classList.add('me-at-github-dropdown-center');
+        }
+        dropdown.style.left = left + 'px';
+      } else {
+        // Ensure it doesn't go off the left edge when right-aligned
+        if (right + dropdownWidth > viewportWidth - padding) {
+          right = padding;
+        }
+        dropdown.style.right = right + 'px';
+      }
     }
     
-    // Check vertical positioning
-    const spaceBelow = viewportHeight - (counterRect.bottom - scrollTop);
-    const spaceAbove = counterRect.top - scrollTop;
+    // Calculate vertical position
+    const spaceBelow = viewportHeight - counterRect.bottom;
+    const spaceAbove = counterRect.top;
+    const offset = 8; // Gap between counter and dropdown
     
     // If dropdown would go off the bottom and there's more space above, position it above
-    if (spaceBelow < dropdownHeight && spaceAbove >= dropdownHeight) {
+    if (spaceBelow < dropdownHeight + padding && spaceAbove >= dropdownHeight + padding) {
       dropdown.classList.add('me-at-github-dropdown-up');
+      dropdown.style.bottom = (viewportHeight - counterRect.top + offset) + 'px';
+    } else {
+      // Position below (default)
+      dropdown.style.top = (counterRect.bottom + offset) + 'px';
+      
+      // Ensure it doesn't go off the bottom
+      const maxHeight = viewportHeight - counterRect.bottom - offset - padding;
+      if (dropdownHeight > maxHeight) {
+        dropdown.style.maxHeight = maxHeight + 'px';
+      }
     }
   }
 

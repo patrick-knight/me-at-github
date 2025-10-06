@@ -73,15 +73,13 @@
 
 /* Dropdown menu using Primer Overlay component styles */
 .me-at-github-dropdown {
-  position: absolute;
-  top: calc(100% + var(--base-size-8, 8px));
-  right: 0;
+  position: fixed;
   background: var(--bgColor-default, #ffffff) !important;
   border: var(--borderWidth-thin, 1px) solid var(--borderColor-default, #d1d9e0);
   border-radius: var(--borderRadius-medium, 6px);
   box-shadow: var(--shadow-floating-large, 0 16px 32px rgba(1, 4, 9, 0.1), 0 0 0 1px rgba(16, 22, 26, 0.1));
   min-width: var(--base-size-300, 300px);
-  max-width: var(--base-size-500, 500px);
+  max-width: min(var(--base-size-500, 500px), calc(100vw - 32px));
   max-height: var(--base-size-400, 400px);
   overflow-y: auto;
   z-index: 2147483647 !important;
@@ -178,27 +176,12 @@ html .me-at-github-dropdown {
   isolation: isolate !important;
 }
 
-/* Dropdown positioning variants */
-.me-at-github-dropdown-left {
-  right: auto;
-  left: 0;
-}
-
+/* Dropdown positioning variants - positioning handled by JS with inline styles */
 .me-at-github-dropdown-center {
-  right: auto;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 90vw;
-}
-
-.me-at-github-dropdown-up {
-  top: auto;
-  bottom: calc(100% + 8px);
+  max-width: calc(100vw - 32px);
 }
 
 .me-at-github-dropdown-mobile {
-  right: 10px;
-  left: 10px;
   width: auto;
   min-width: auto;
   max-width: none;
