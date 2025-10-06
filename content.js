@@ -1063,7 +1063,7 @@
   function ensureMaxZIndex(dropdown) {
     // Set to maximum safe integer value with additional properties
     dropdown.style.zIndex = '2147483647';
-    dropdown.style.position = 'absolute';
+    dropdown.style.position = 'fixed';
     dropdown.style.isolation = 'isolate';
     dropdown.style.willChange = 'transform';
     dropdown.style.transform = 'translateZ(0)';
