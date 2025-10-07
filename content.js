@@ -976,28 +976,14 @@
     const dropdown = counter.querySelector('.me-at-github-dropdown');
     if (!dropdown) return;
     
+    // Clean up any existing body-level dropdowns
+    const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
+    bodyDropdowns.forEach(d => d.remove());
+    
     dropdown.style.display = 'block';
     
     // Ensure maximum z-index
     ensureMaxZIndex(dropdown);
-    
-    // Nuclear option: move dropdown to body if z-index issues persist
-    const counterRect = counter.getBoundingClientRect();
-    const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
-    
-    // Clean up any existing body-level dropdowns
-    bodyDropdowns.forEach(d => d.remove());
-    
-    // Check if dropdown is properly visible after a short delay
-    setTimeout(() => {
-      const dropdownRect = dropdown.getBoundingClientRect();
-      const isVisible = dropdownRect.width > 0 && dropdownRect.height > 0;
-      const computedZIndex = parseInt(window.getComputedStyle(dropdown).zIndex);
-      
-      if (!isVisible || computedZIndex < 1000000) {
-        createBodyPortalDropdown(counter, dropdown);
-      }
-    }, 100);
     
     // Smart positioning to keep dropdown on screen
     positionDropdown(counter, dropdown);
