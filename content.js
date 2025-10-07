@@ -1104,12 +1104,8 @@
   
   // Position dropdown to stay within viewport bounds
   function positionDropdown(counter, dropdown) {
-    // Reset positioning classes and inline styles
+    // Reset positioning classes
     dropdown.classList.remove('me-at-github-dropdown-left', 'me-at-github-dropdown-up', 'me-at-github-dropdown-center', 'me-at-github-dropdown-mobile');
-    dropdown.style.top = '';
-    dropdown.style.left = '';
-    dropdown.style.right = '';
-    dropdown.style.bottom = '';
     
     // Get viewport dimensions
     const viewportWidth = window.innerWidth;
@@ -1118,6 +1114,15 @@
     
     // Get counter position (fixed positioning uses viewport coordinates)
     const counterRect = counter.getBoundingClientRect();
+    
+    console.log('Counter position:', {
+      top: counterRect.top,
+      bottom: counterRect.bottom,
+      left: counterRect.left,
+      right: counterRect.right,
+      width: counterRect.width,
+      height: counterRect.height
+    });
     
     // Get dropdown dimensions (temporarily make it visible to measure)
     const originalDisplay = dropdown.style.display;
@@ -1133,6 +1138,8 @@
     dropdown.style.display = originalDisplay;
     dropdown.style.visibility = originalVisibility;
     
+    console.log('Dropdown dimensions:', { width: dropdownWidth, height: dropdownHeight });
+    
     // Calculate horizontal position
     const spaceOnRight = viewportWidth - counterRect.right;
     const spaceOnLeft = counterRect.left;
@@ -1142,9 +1149,17 @@
       dropdown.classList.add('me-at-github-dropdown-mobile');
       dropdown.style.left = padding + 'px';
       dropdown.style.right = padding + 'px';
+      console.log('Mobile mode: left/right padding');
     } else {
       // Default: align dropdown's right edge with counter's right edge
       const rightAlignedLeft = counterRect.right - dropdownWidth;
+      
+      console.log('Desktop positioning:', {
+        rightAlignedLeft,
+        spaceOnLeft,
+        spaceOnRight,
+        dropdownWidth
+      });
       
       // Check if right-aligned dropdown would go off the left edge
       if (rightAlignedLeft < padding) {
@@ -1156,14 +1171,17 @@
           const centeredLeft = Math.max(padding, (viewportWidth - dropdownWidth) / 2);
           dropdown.style.left = centeredLeft + 'px';
           dropdown.classList.add('me-at-github-dropdown-center');
+          console.log('Centered at:', centeredLeft);
         } else {
           // Left-align with counter
           dropdown.style.left = counterRect.left + 'px';
           dropdown.classList.add('me-at-github-dropdown-left');
+          console.log('Left-aligned at:', counterRect.left);
         }
       } else {
         // Right-align with counter (default, most common case)
         dropdown.style.left = rightAlignedLeft + 'px';
+        console.log('Right-aligned at:', rightAlignedLeft);
       }
     }
     
@@ -1175,15 +1193,22 @@
     // If dropdown would go off the bottom and there's more space above, position it above
     if (spaceBelow < dropdownHeight + padding && spaceAbove >= dropdownHeight + padding) {
       dropdown.classList.add('me-at-github-dropdown-up');
-      dropdown.style.bottom = (viewportHeight - counterRect.top + offset) + 'px';
+      const bottomPos = viewportHeight - counterRect.top + offset;
+      dropdown.style.bottom = bottomPos + 'px';
+      dropdown.style.top = 'auto';
+      console.log('Positioned above at bottom:', bottomPos);
     } else {
       // Position below (default)
-      dropdown.style.top = (counterRect.bottom + offset) + 'px';
+      const topPos = counterRect.bottom + offset;
+      dropdown.style.top = topPos + 'px';
+      dropdown.style.bottom = 'auto';
+      console.log('Positioned below at top:', topPos);
       
       // Ensure it doesn't go off the bottom
       const maxHeight = viewportHeight - counterRect.bottom - offset - padding;
       if (dropdownHeight > maxHeight) {
         dropdown.style.maxHeight = maxHeight + 'px';
+        console.log('Max height constrained to:', maxHeight);
       }
     }
   }
