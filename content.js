@@ -198,9 +198,17 @@
           className.includes('participation-avatars') ||
           className.includes('participants') ||
           className.includes('participant-avatar') ||
+          className.includes('assignee') ||
+          className.includes('Assignee') ||
+          className.includes('timeline') ||
+          className.includes('Timeline') ||
           className.includes('d-flex') ||
           className.includes('flex-wrap') ||
-          element.closest && element.closest('[class*="ActivityHeader"]')) {
+          element.closest && (element.closest('[class*="ActivityHeader"]') ||
+                             element.closest('[class*="assignee"]') ||
+                             element.closest('[class*="Assignee"]') ||
+                             element.closest('[class*="timeline"]') ||
+                             element.closest('[class*="Timeline"]'))) {
         return true;
       }
       
@@ -446,6 +454,11 @@
     
     // Check if navigation controls already exist
     if (element.querySelector('.me-at-github-nav')) {
+      return;
+    }
+    
+    // Don't add navigation to elements in excluded areas (assignees, timeline, etc.)
+    if (isInExcludedArea(element)) {
       return;
     }
     
@@ -1134,40 +1147,47 @@
     if (viewportWidth < 600) {
       dropdown.classList.add('me-at-github-dropdown-mobile');
       dropdown.style.left = padding + 'px';
-      dropdown.style.right = padding + 'px';
-      console.log('Mobile mode: left/right padding');
+      dropdown.style.right = 'auto';
+      dropdown.style.width = `calc(100vw - ${padding * 2}px)`;
+      console.log('Mobile mode: full width with padding');
     } else {
-      // Default: align dropdown's right edge with counter's right edge
-      const rightAlignedLeft = counterRect.right - dropdownWidth;
+      // Desktop: position dropdown near the counter
+      // Default strategy: align right edges (dropdown right = counter right)
+      const alignRight = counterRect.right - dropdownWidth;
       
       console.log('Desktop positioning:', {
-        rightAlignedLeft,
+        counterLeft: counterRect.left,
+        counterRight: counterRect.right,
+        dropdownWidth,
+        alignRight,
         spaceOnLeft,
-        spaceOnRight,
-        dropdownWidth
+        spaceOnRight
       });
       
       // Check if right-aligned dropdown would go off the left edge
-      if (rightAlignedLeft < padding) {
-        // Not enough space on the left, try left-aligning with counter's left edge
-        const leftAlignedRight = counterRect.left + dropdownWidth;
+      if (alignRight < padding) {
+        // Not enough space, try left-aligning (dropdown left = counter left)
+        const alignLeft = counterRect.left;
         
-        if (leftAlignedRight > viewportWidth - padding) {
-          // Doesn't fit either way - center it with padding
+        if (alignLeft + dropdownWidth > viewportWidth - padding) {
+          // Still doesn't fit - center in viewport
           const centeredLeft = Math.max(padding, (viewportWidth - dropdownWidth) / 2);
           dropdown.style.left = centeredLeft + 'px';
+          dropdown.style.right = 'auto';
           dropdown.classList.add('me-at-github-dropdown-center');
           console.log('Centered at:', centeredLeft);
         } else {
           // Left-align with counter
-          dropdown.style.left = counterRect.left + 'px';
+          dropdown.style.left = alignLeft + 'px';
+          dropdown.style.right = 'auto';
           dropdown.classList.add('me-at-github-dropdown-left');
-          console.log('Left-aligned at:', counterRect.left);
+          console.log('Left-aligned at:', alignLeft);
         }
       } else {
-        // Right-align with counter (default, most common case)
-        dropdown.style.left = rightAlignedLeft + 'px';
-        console.log('Right-aligned at:', rightAlignedLeft);
+        // Right-align dropdown with counter (most common)
+        dropdown.style.left = alignRight + 'px';
+        dropdown.style.right = 'auto';
+        console.log('Right-aligned at:', alignRight);
       }
     }
     
@@ -1175,6 +1195,14 @@
     const spaceBelow = viewportHeight - counterRect.bottom;
     const spaceAbove = counterRect.top;
     const offset = 8; // Gap between counter and dropdown
+    
+    console.log('Vertical positioning:', {
+      counterTop: counterRect.top,
+      counterBottom: counterRect.bottom,
+      spaceBelow,
+      spaceAbove,
+      dropdownHeight
+    });
     
     // If dropdown would go off the bottom and there's more space above, position it above
     if (spaceBelow < dropdownHeight + padding && spaceAbove >= dropdownHeight + padding) {
@@ -1184,7 +1212,7 @@
       dropdown.style.top = 'auto';
       console.log('Positioned above at bottom:', bottomPos);
     } else {
-      // Position below (default)
+      // Position below (default) - dropdown top edge at counter bottom + offset
       const topPos = counterRect.bottom + offset;
       dropdown.style.top = topPos + 'px';
       dropdown.style.bottom = 'auto';
