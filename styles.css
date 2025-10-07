@@ -90,7 +90,7 @@
 
 /* Force dropdown above all GitHub elements */
 .me-at-github-dropdown {
-  position: absolute !important;
+  position: fixed !important;
 }
 
 /* Ensure dropdown appears above GitHub's mention suggestions and other popups */
@@ -110,7 +110,7 @@ html .me-at-github-dropdown {
 
 /* Force above any potential GitHub overlays */
 .me-at-github-dropdown {
-  position: absolute !important;
+  position: fixed !important;
   z-index: 2147483647 !important;
 }
 
@@ -152,7 +152,7 @@ html .me-at-github-dropdown {
 /* Override GitHub's Box components and styled-components */
 .me-at-github-dropdown {
   z-index: 2147483647 !important;
-  position: absolute !important;
+  position: fixed !important;
   isolation: isolate !important;
 }
 
