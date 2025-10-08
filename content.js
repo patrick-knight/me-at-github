@@ -872,16 +872,6 @@
     
     dropdown.appendChild(list);
     counter.appendChild(dropdown);
-    
-    // Add body click handler for toggle functionality
-    // Note: This will be managed by the counter's toggle handler
-    
-    // Reposition dropdown on window resize if it's visible
-    window.addEventListener('resize', () => {
-      if (dropdown.style.display === 'block') {
-        positionDropdown(counter, dropdown);
-      }
-    });
   }
 
   // Get line content where the mention appears and create DOM nodes
