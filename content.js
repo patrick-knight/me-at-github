@@ -42,12 +42,76 @@
   // Helper function to check if a node is in an excluded area (titles, headers, navigation)
   function isInExcludedArea(node) {
     let current = node;
+    let foundAllowedArea = false;
     
     // Walk up the DOM tree to check for excluded areas
     while (current && current !== document.body) {
       const element = current.nodeType === Node.TEXT_NODE ? current.parentElement : current;
       
       if (!element) break;
+      
+      // FIRST: Check if we're inside an allowed comment body area
+      const classList = element.classList;
+      if (classList) {
+        const allowedClasses = [
+          'comment-body',
+          'js-comment-body',
+          'markdown-body',
+          'js-comment-update',
+          'edit-comment-hide',
+          'js-suggested-changes-contents',
+          'js-file-content',
+          'IssueCommentViewer-module__IssueCommentBody',
+          'DiscussionCommentViewer-module__DiscussionCommentBody',
+          'discussion-comment-body',
+          'js-discussion-comment-body',
+          'js-comment-container',
+          'js-comment-text',
+          'review-comment-contents',
+          'js-review-comment-contents',
+          'js-suggested-changes-blob',
+          'js-file-line-container',
+          'pull-request-review-comment',
+          'timeline-comment-wrapper',
+          // GitHub February 2025 UI refresh classes
+          'Layout-sc-1xcs6mc-0',
+          'Layout-self-start'
+        ];
+
+        for (const allowedClass of allowedClasses) {
+          if (classList.contains(allowedClass)) {
+            // We're in a comment body - this is definitely allowed
+            foundAllowedArea = true;
+            break;
+          }
+        }
+      }
+
+      if (!foundAllowedArea) {
+        const dataTestId = element.getAttribute && element.getAttribute('data-testid');
+        if (dataTestId) {
+          const allowedTestIds = [
+            'comment-body',
+            'comment-body-inner',
+            'issue-comment-body',
+            'discussion-comment-body',
+            'timeline-comment-body',
+            'pull-request-review-comment-body',
+            'review-comment-body'
+          ];
+          for (const allowedId of allowedTestIds) {
+            if (dataTestId.includes(allowedId)) {
+              foundAllowedArea = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      // If we found an allowed area, stop checking and allow it
+      if (foundAllowedArea) {
+        return false;
+      }
       
       // Check for title areas and headers
       const tagName = element.tagName?.toLowerCase();
@@ -56,7 +120,6 @@
       }
       
       // Check for GitHub-specific title and header classes
-      const classList = element.classList;
       if (classList) {
         const excludedClasses = [
           // Issue, PR and Discussion titles
@@ -144,71 +207,38 @@
         return true;
       }
       
-      // Check if we're inside the actual comment body areas (these are allowed)
-      if (classList) {
-        const allowedClasses = [
-          'comment-body',
-          'js-comment-body',
-          'markdown-body',
-          'js-comment-update',
-          'edit-comment-hide',
-          'js-suggested-changes-contents',
-          'js-file-content',
-          'IssueCommentViewer-module__IssueCommentBody',
-          'DiscussionCommentViewer-module__DiscussionCommentBody',
-          'discussion-comment-body',
-          'js-discussion-comment-body',
-          'js-comment-container',
-          // PR-specific classes
-          'js-comment-text',
-          'review-comment-contents',
-          'js-review-comment-contents',
-          'js-suggested-changes-blob',
-          'js-file-line-container',
-          'js-timeline-item',
-          'js-discussion',
-          'pull-request-review-comment',
-          'timeline-comment-wrapper'
-        ];
-        
-        for (const allowedClass of allowedClasses) {
-          if (classList.contains(allowedClass)) {
-            // We're in a comment body, so this is allowed (return false)
-            return false;
-          }
-        }
-      }
-      
       // Additional comprehensive checks for modern GitHub CSS modules
       const className = (element.className && element.className.toString) ? 
         element.className.toString() : 
         (element.className || '');
       
       // Check for CSS modules (GitHub's modern styling system)
-      if (className.includes('ActivityHeader') || 
-          className.includes('Header-module') ||
-          className.includes('ListItem-module') ||
-          className.includes('IssueItem-module') ||
-          className.includes('navigation') ||
-          className.includes('title') ||
-          className.includes('comment-reactions') ||
-          className.includes('social-reactions') ||
-          className.includes('reactions-container') ||
-          className.includes('js-reaction-buttons') ||
-          className.includes('participation-avatars') ||
-          className.includes('participants') ||
-          className.includes('participant-avatar') ||
-          className.includes('assignee') ||
-          className.includes('Assignee') ||
-          className.includes('timeline') ||
-          className.includes('Timeline') ||
-          className.includes('d-flex') ||
-          className.includes('flex-wrap') ||
-          element.closest && (element.closest('[class*="ActivityHeader"]') ||
-                             element.closest('[class*="assignee"]') ||
-                             element.closest('[class*="Assignee"]') ||
-                             element.closest('[class*="timeline"]') ||
-                             element.closest('[class*="Timeline"]'))) {
+      const excludedClassNamePatterns = [
+        'ActivityHeader',
+        'Header-module',
+        'ListItem-module',
+        'IssueItem-module',
+        'navigation',
+        'comment-reactions',
+        'social-reactions',
+        'reactions-container',
+        'js-reaction-buttons',
+        'participation-avatars',
+        'participants',
+        'participant-avatar',
+        'assignee',
+        'Assignee',
+        'd-flex',
+        'flex-wrap'
+      ];
+
+      if (excludedClassNamePatterns.some(pattern => className.includes(pattern))) {
+        return true;
+      }
+
+      if (element.closest && (element.closest('[class*="ActivityHeader"]') ||
+                              element.closest('[class*="assignee"]') ||
+                              element.closest('[class*="Assignee"]'))) {
         return true;
       }
       
@@ -227,6 +257,8 @@
   function findMentions() {
     if (!username) return [];
     
+    console.log('findMentions: Searching for mentions of:', username);
+    
     const mentions = [];
     
     // First, find GitHub's native user mention links
@@ -241,15 +273,22 @@
     const allLinks = new Set();
     mentionSelectors.forEach(selector => {
       const links = document.querySelectorAll(selector);
+      console.log(`findMentions: Found ${links.length} links for selector "${selector}"`);
       links.forEach(link => allLinks.add(link));
     });
+    
+    console.log(`findMentions: Total unique links found: ${allLinks.size}`);
     
     allLinks.forEach((link, idx) => {
       const linkText = link.textContent.trim();
       const linkHref = link.getAttribute('href') || link.href;
       
+      console.log(`findMentions: Checking link ${idx}:`, { text: linkText, href: linkHref });
+      
       // Skip if this link is in an excluded area (title, header, etc.)
-      if (isInExcludedArea(link)) {
+      const excluded = isInExcludedArea(link);
+      if (excluded) {
+        console.log(`findMentions: Link ${idx} is in excluded area, skipping`, link);
         return;
       }
       
@@ -258,16 +297,25 @@
       const matchesText = linkText === `@${username}`;
       const matchesHref = linkHref.endsWith(`/${username}`) || linkHref === `/${username}`;
       
+      console.log(`findMentions: Link ${idx} matching:`, { matchesText, matchesHref });
+      
       if (matchesText || matchesHref) {
         // Find the text node inside the link
-        const textNode = Array.from(link.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+        let textNode = Array.from(link.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+        if (!textNode) {
+          const walker = document.createTreeWalker(link, NodeFilter.SHOW_TEXT);
+          textNode = walker.nextNode();
+        }
         if (textNode) {
+          console.log(`findMentions: Found mention in link ${idx}`);
           mentions.push({
             node: textNode,
             text: textNode.textContent,
             index: 0,
             element: link
           });
+        } else {
+          console.log(`findMentions: Link ${idx} matches but has no text node`);
         }
       }
     });
@@ -591,6 +639,7 @@
   // Create and inject the counter badge
   function createCounter() {
     const count = mentions.length;
+    console.log('createCounter called with count:', count);
     if (count === 0) return;
     
     // Find the issue/PR number element first - this is our primary target
@@ -659,14 +708,19 @@
     }
     
     if (!issueNumberElement) {
+      console.log('createCounter: No issue number element found');
       return;
     }
+    
+    console.log('createCounter: Found issue number element:', issueNumberElement);
     
     // Create counter badge
     const counter = document.createElement('span');
     counter.classList.add('me-at-github-counter');
     counter.textContent = `${count} mention${count !== 1 ? 's' : ''}`;
     counter.title = `${count} mention${count !== 1 ? 's' : ''} of @${username}`;
+    
+    console.log('createCounter: Counter element created');
     
     // Add click handler to toggle dropdown
     counter.addEventListener('click', (e) => {
@@ -1020,6 +1074,21 @@
     
     console.log('showDropdown: Dropdown positioned, final display:', dropdown.style.display);
     
+    // Track scroll events (GitHub often uses nested scroll containers)
+    if (!counter._dropdownScrollHandler) {
+      counter._dropdownScrollHandler = () => {
+        // Throttle via requestAnimationFrame to avoid layout thrash
+        if (!counter._dropdownScrollRaf) {
+          counter._dropdownScrollRaf = requestAnimationFrame(() => {
+            positionDropdown(counter, dropdown);
+            counter._dropdownScrollRaf = null;
+          });
+        }
+      };
+    }
+
+    document.addEventListener('scroll', counter._dropdownScrollHandler, { capture: true, passive: true });
+
     // Add body click listener for toggle functionality
     document.addEventListener('click', counter._dropdownToggleHandler, { capture: true });
   }
@@ -1037,6 +1106,14 @@
     
     // Remove body click listener
     document.removeEventListener('click', counter._dropdownToggleHandler, { capture: true });
+
+    if (counter._dropdownScrollHandler) {
+      document.removeEventListener('scroll', counter._dropdownScrollHandler, { capture: true });
+      if (counter._dropdownScrollRaf) {
+        cancelAnimationFrame(counter._dropdownScrollRaf);
+        counter._dropdownScrollRaf = null;
+      }
+    }
   }
   
   // Create a body-level dropdown portal to escape stacking context issues
@@ -1303,10 +1380,15 @@
 
   // Initialize the extension
   function init() {
+    console.log('init() called, current URL:', location.href);
+    
     // Verify we're on a supported page
     if (!isOnSupportedPage()) {
+      console.log('init(): Not on a supported page');
       return;
     }
+    
+    console.log('init(): On supported page, proceeding...');
     
     // Clean up any previous initialization
     cleanup();
@@ -1322,12 +1404,16 @@
     });
     
     username = getUsername();
+    console.log('init(): Username:', username);
     if (!username) {
+      console.log('init(): No username found');
       return;
     }
     
     // Find all mentions
     mentions = findMentions();
+    
+    console.log('Found mentions:', mentions.length);
     
     if (mentions.length > 0) {
       // Initialize mention index
@@ -1336,12 +1422,15 @@
       }
       
       // Highlight mentions
+      console.log('Highlighting mentions...');
       highlightMentions();
       
       // Create counter
+      console.log('Creating counter...');
       createCounter();
       return true; // Success
     } else {
+      console.log('No mentions found');
       return false; // No mentions found
     }
   }
