@@ -1056,39 +1056,25 @@
     
     console.log('showDropdown: Showing dropdown');
     
-    // Clean up any existing body-level dropdowns
-    const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
-    bodyDropdowns.forEach(d => d.remove());
-    
+    // First make it block but invisible so we can measure it
     dropdown.style.display = 'block';
+    dropdown.style.visibility = 'hidden';
+    dropdown.style.opacity = '0';
+    dropdown.style.zIndex = '2147483647';
+    dropdown.style.position = 'fixed';
+    
+    // Force a reflow to ensure the dropdown has dimensions
+    void dropdown.offsetHeight;
+    
+    // Position the dropdown now that it has proper dimensions
+    positionDropdown(counter, dropdown);
+    
+    // Now make it visible
     dropdown.style.visibility = 'visible';
     dropdown.style.opacity = '1';
     
-    console.log('showDropdown: Set display to block');
+    console.log('showDropdown: Dropdown positioned');
     
-    // Ensure maximum z-index
-    ensureMaxZIndex(dropdown);
-    
-    // Smart positioning to keep dropdown on screen
-    positionDropdown(counter, dropdown);
-    
-    console.log('showDropdown: Dropdown positioned, final display:', dropdown.style.display);
-    
-    // Track scroll events (GitHub often uses nested scroll containers)
-    if (!counter._dropdownScrollHandler) {
-      counter._dropdownScrollHandler = () => {
-        // Throttle via requestAnimationFrame to avoid layout thrash
-        if (!counter._dropdownScrollRaf) {
-          counter._dropdownScrollRaf = requestAnimationFrame(() => {
-            positionDropdown(counter, dropdown);
-            counter._dropdownScrollRaf = null;
-          });
-        }
-      };
-    }
-
-    document.addEventListener('scroll', counter._dropdownScrollHandler, { capture: true, passive: true });
-
     // Add body click listener for toggle functionality
     document.addEventListener('click', counter._dropdownToggleHandler, { capture: true });
   }
@@ -1100,227 +1086,42 @@
       dropdown.style.display = 'none';
     }
     
-    // Clean up any body portal
-    const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
-    bodyDropdowns.forEach(d => d.remove());
-    
     // Remove body click listener
     document.removeEventListener('click', counter._dropdownToggleHandler, { capture: true });
-
-    if (counter._dropdownScrollHandler) {
-      document.removeEventListener('scroll', counter._dropdownScrollHandler, { capture: true });
-      if (counter._dropdownScrollRaf) {
-        cancelAnimationFrame(counter._dropdownScrollRaf);
-        counter._dropdownScrollRaf = null;
-      }
-    }
   }
   
-  // Create a body-level dropdown portal to escape stacking context issues
-  function createBodyPortalDropdown(counter, originalDropdown) {
-    const portalDropdown = originalDropdown.cloneNode(true);
-    portalDropdown.classList.add('me-at-github-dropdown-portal');
-    portalDropdown.style.position = 'fixed';
-    portalDropdown.style.zIndex = '2147483647';
-    
-    // Position relative to counter
-    const counterRect = counter.getBoundingClientRect();
-    portalDropdown.style.top = (counterRect.bottom + 8) + 'px';
-    portalDropdown.style.left = (counterRect.right - 300) + 'px';
-    
-    // Hide original and show portal
-    originalDropdown.style.display = 'none';
-    document.body.appendChild(portalDropdown);
-    
-    // Handle clicks on portal dropdown
-    portalDropdown.addEventListener('click', (e) => {
-      if (e.target.closest('.me-at-github-dropdown-item')) {
-        const index = parseInt(e.target.closest('.me-at-github-dropdown-item').dataset.mentionIndex);
-        if (!isNaN(index)) {
-          navigateToMention(index);
-          hideDropdown(counter);
-        }
-      }
-    });
-    
-    // Close on outside click
-    setTimeout(() => {
-      document.addEventListener('click', function closePortal(e) {
-        if (!portalDropdown.contains(e.target) && !counter.contains(e.target)) {
-          portalDropdown.remove();
-          document.removeEventListener('click', closePortal);
-        }
-      });
-    }, 0);
-  }
-  
-  // Ensure dropdown has maximum z-index to appear above all GitHub elements
-  function ensureMaxZIndex(dropdown) {
-    // Set to maximum safe integer value with additional properties
-    dropdown.style.zIndex = '2147483647';
-    dropdown.style.position = 'fixed';
-    dropdown.style.isolation = 'isolate';
-    dropdown.style.willChange = 'transform';
-    dropdown.style.transform = 'translateZ(0)';
-    
-    // Also set z-index on parent counter
-    const counter = dropdown.closest('.me-at-github-counter');
-    if (counter) {
-      counter.style.position = 'relative';
-      counter.style.zIndex = '2147483647';
-      counter.style.isolation = 'isolate';
-    }
-    
-    // Check for GitHub popups and Box components
-    const githubElements = document.querySelectorAll([
-      '[role=\"dialog\"]',
-      '.Popover',
-      '.dropdown-menu', 
-      '.autocomplete-results',
-      '.suggester',
-      '[class*=\"Box-\"]',
-      '.Box-sc-g0xbh4-0',
-      '.crMLA-D',
-      '[class*=\"crMLA\"]'
-    ].join(', '));
-    
-    let maxZIndex = 2147483647;
-    
-    githubElements.forEach(element => {
-      const zIndex = parseInt(window.getComputedStyle(element).zIndex);
-      if (!isNaN(zIndex) && zIndex >= maxZIndex) {
-        maxZIndex = zIndex + 1;
-      }
-    });
-    
-    const finalZIndex = Math.min(maxZIndex, 2147483647).toString();
-    dropdown.style.zIndex = finalZIndex;
-  }
-  
-  // Position dropdown to stay within viewport bounds
+  // Simple positioning: dropdown directly below counter, aligned to right edge
   function positionDropdown(counter, dropdown) {
-    // Reset positioning classes
-    dropdown.classList.remove('me-at-github-dropdown-left', 'me-at-github-dropdown-up', 'me-at-github-dropdown-center', 'me-at-github-dropdown-mobile');
-    
-    // Get viewport dimensions
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const padding = 16; // Minimum padding from viewport edges
-    
-    // Get counter position (fixed positioning uses viewport coordinates)
     const counterRect = counter.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const padding = 16;
     
-    console.log('Counter position:', {
-      top: counterRect.top,
-      bottom: counterRect.bottom,
-      left: counterRect.left,
-      right: counterRect.right,
-      width: counterRect.width,
-      height: counterRect.height
-    });
+    // Get dropdown width
+    const dropdownWidth = dropdown.offsetWidth || 300;
     
-    // Get dropdown dimensions (temporarily make it visible to measure)
-    const originalDisplay = dropdown.style.display;
-    const originalVisibility = dropdown.style.visibility;
-    dropdown.style.visibility = 'hidden';
-    dropdown.style.display = 'block';
+    // Position below counter
+    dropdown.style.top = (counterRect.bottom + 8) + 'px';
     
-    const dropdownRect = dropdown.getBoundingClientRect();
-    const dropdownWidth = dropdownRect.width;
-    const dropdownHeight = dropdownRect.height;
+    // Try to align right edge of dropdown with right edge of counter
+    let leftPosition = counterRect.right - dropdownWidth;
     
-    // Restore original visibility
-    dropdown.style.display = originalDisplay;
-    dropdown.style.visibility = originalVisibility;
-    
-    console.log('Dropdown dimensions:', { width: dropdownWidth, height: dropdownHeight });
-    
-    // Calculate horizontal position
-    const spaceOnRight = viewportWidth - counterRect.right;
-    const spaceOnLeft = counterRect.left;
-    
-    // For very small screens (mobile), always use full width
-    if (viewportWidth < 600) {
-      dropdown.classList.add('me-at-github-dropdown-mobile');
-      dropdown.style.left = padding + 'px';
-      dropdown.style.right = 'auto';
-      dropdown.style.width = `calc(100vw - ${padding * 2}px)`;
-      console.log('Mobile mode: full width with padding');
-    } else {
-      // Desktop: position dropdown near the counter
-      // Default strategy: align right edges (dropdown right = counter right)
-      const alignRight = counterRect.right - dropdownWidth;
-      
-      console.log('Desktop positioning:', {
-        counterLeft: counterRect.left,
-        counterRight: counterRect.right,
-        dropdownWidth,
-        alignRight,
-        spaceOnLeft,
-        spaceOnRight
-      });
-      
-      // Check if right-aligned dropdown would go off the left edge
-      if (alignRight < padding) {
-        // Not enough space, try left-aligning (dropdown left = counter left)
-        const alignLeft = counterRect.left;
-        
-        if (alignLeft + dropdownWidth > viewportWidth - padding) {
-          // Still doesn't fit - center in viewport
-          const centeredLeft = Math.max(padding, (viewportWidth - dropdownWidth) / 2);
-          dropdown.style.left = centeredLeft + 'px';
-          dropdown.style.right = 'auto';
-          dropdown.classList.add('me-at-github-dropdown-center');
-          console.log('Centered at:', centeredLeft);
-        } else {
-          // Left-align with counter
-          dropdown.style.left = alignLeft + 'px';
-          dropdown.style.right = 'auto';
-          dropdown.classList.add('me-at-github-dropdown-left');
-          console.log('Left-aligned at:', alignLeft);
-        }
-      } else {
-        // Right-align dropdown with counter (most common)
-        dropdown.style.left = alignRight + 'px';
-        dropdown.style.right = 'auto';
-        console.log('Right-aligned at:', alignRight);
-      }
+    // If that goes off the left edge, align left edges instead
+    if (leftPosition < padding) {
+      leftPosition = counterRect.left;
     }
     
-    // Calculate vertical position
-    const spaceBelow = viewportHeight - counterRect.bottom;
-    const spaceAbove = counterRect.top;
-    const offset = 8; // Gap between counter and dropdown
-    
-    console.log('Vertical positioning:', {
-      counterTop: counterRect.top,
-      counterBottom: counterRect.bottom,
-      spaceBelow,
-      spaceAbove,
-      dropdownHeight
-    });
-    
-    // If dropdown would go off the bottom and there's more space above, position it above
-    if (spaceBelow < dropdownHeight + padding && spaceAbove >= dropdownHeight + padding) {
-      dropdown.classList.add('me-at-github-dropdown-up');
-      const bottomPos = viewportHeight - counterRect.top + offset;
-      dropdown.style.bottom = bottomPos + 'px';
-      dropdown.style.top = 'auto';
-      console.log('Positioned above at bottom:', bottomPos);
-    } else {
-      // Position below (default) - dropdown top edge at counter bottom + offset
-      const topPos = counterRect.bottom + offset;
-      dropdown.style.top = topPos + 'px';
-      dropdown.style.bottom = 'auto';
-      console.log('Positioned below at top:', topPos);
-      
-      // Ensure it doesn't go off the bottom
-      const maxHeight = viewportHeight - counterRect.bottom - offset - padding;
-      if (dropdownHeight > maxHeight) {
-        dropdown.style.maxHeight = maxHeight + 'px';
-        console.log('Max height constrained to:', maxHeight);
-      }
+    // If still goes off right edge, push it left
+    if (leftPosition + dropdownWidth > viewportWidth - padding) {
+      leftPosition = viewportWidth - dropdownWidth - padding;
     }
+    
+    dropdown.style.left = Math.max(padding, leftPosition) + 'px';
+    
+    console.log('Positioned dropdown at:', {
+      top: counterRect.bottom + 8,
+      left: leftPosition,
+      counterRect
+    });
   }
 
   // Clean up previous initialization
