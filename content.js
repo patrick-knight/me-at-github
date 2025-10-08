@@ -671,6 +671,7 @@
     // Add click handler to toggle dropdown
     counter.addEventListener('click', (e) => {
       e.stopPropagation();
+      console.log('Counter clicked!');
       toggleDropdown(counter);
     });
     
@@ -975,11 +976,18 @@
   // Toggle dropdown visibility with smart positioning
   function toggleDropdown(counter) {
     const dropdown = counter.querySelector('.me-at-github-dropdown');
-    if (!dropdown) return;
+    if (!dropdown) {
+      console.log('toggleDropdown: No dropdown found');
+      return;
+    }
     
-    if (dropdown.style.display === 'none') {
+    console.log('toggleDropdown: Current display:', dropdown.style.display);
+    
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+      console.log('toggleDropdown: Showing dropdown');
       showDropdown(counter);
     } else {
+      console.log('toggleDropdown: Hiding dropdown');
       hideDropdown(counter);
     }
   }
@@ -987,19 +995,30 @@
   // Show dropdown with proper positioning and event handling
   function showDropdown(counter) {
     const dropdown = counter.querySelector('.me-at-github-dropdown');
-    if (!dropdown) return;
+    if (!dropdown) {
+      console.log('showDropdown: No dropdown found');
+      return;
+    }
+    
+    console.log('showDropdown: Showing dropdown');
     
     // Clean up any existing body-level dropdowns
     const bodyDropdowns = document.querySelectorAll('body > .me-at-github-dropdown-portal');
     bodyDropdowns.forEach(d => d.remove());
     
     dropdown.style.display = 'block';
+    dropdown.style.visibility = 'visible';
+    dropdown.style.opacity = '1';
+    
+    console.log('showDropdown: Set display to block');
     
     // Ensure maximum z-index
     ensureMaxZIndex(dropdown);
     
     // Smart positioning to keep dropdown on screen
     positionDropdown(counter, dropdown);
+    
+    console.log('showDropdown: Dropdown positioned, final display:', dropdown.style.display);
     
     // Add body click listener for toggle functionality
     document.addEventListener('click', counter._dropdownToggleHandler, { capture: true });
