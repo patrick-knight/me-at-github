@@ -12,8 +12,7 @@
   // Shared supported page patterns (DRY principle)
   const SUPPORTED_PAGE_PATTERNS = [
     /github\.com\/[^/]+\/[^/]+\/(issues|pull|discussions)\//,
-    /github\.com\/orgs\/[^/]+\/discussions\//,
-    /github\.com\/[^/]+\/[^/]+\/discussions\//
+    /github\.com\/orgs\/[^/]+\/discussions\//
   ];
 
   // Helper function to check if current page is supported
@@ -413,7 +412,6 @@
     });
     
     // Process each text node
-    let highlightedCount = 0;
     nodeGroups.forEach((mentionList, textNode) => {
       // Skip if already processed or if text node is polluted with navigation
       if (!textNode.parentNode || 
@@ -445,7 +443,6 @@
         
         // Add navigation controls
         addNavigationControls(mentionSpan, index);
-        highlightedCount++;
         return;
       }
       
@@ -524,7 +521,6 @@
     element.appendChild(nav);
     
     let hideTimeout;
-    let isNavVisible = false;
     
     // Show navigation on hover or active
     const showNav = () => {
@@ -532,7 +528,6 @@
       // Only show if we have mentions to navigate through
       if (mentions.length > 1) {
         nav.style.display = 'flex';
-        isNavVisible = true;
       }
     };
     
@@ -540,7 +535,6 @@
     const hideNav = () => {
       hideTimeout = setTimeout(() => {
         nav.style.display = 'none';
-        isNavVisible = false;
       }, 2000); // Keep visible for 2 seconds
     };
     
@@ -568,7 +562,6 @@
         // Hide nav immediately after successful navigation
         clearTimeout(hideTimeout);
         nav.style.display = 'none';
-        isNavVisible = false;
       }
     });
     
@@ -580,7 +573,6 @@
         // Hide nav immediately after successful navigation
         clearTimeout(hideTimeout);
         nav.style.display = 'none';
-        isNavVisible = false;
       }
     });
   }
@@ -596,11 +588,6 @@
       index = mentions.length - 1;
     } else if (index >= mentions.length) {
       index = 0;
-    }
-    
-    // Ensure index is still valid
-    if (index < 0 || index >= mentions.length) {
-      return false;
     }
     
     currentMentionIndex = index;
@@ -729,23 +716,15 @@
       toggleDropdown(counter);
     });
     
-    // Store reference for body click handler
+    // Store reference for body click handler to close dropdown on outside click
     counter._dropdownToggleHandler = (e) => {
-      // Don't toggle if clicking on the counter itself or dropdown content
+      // Don't close if clicking on the counter itself or dropdown content
       if (counter.contains(e.target) || 
           document.querySelector('.me-at-github-dropdown-portal')?.contains(e.target)) {
         return;
       }
       
-      const dropdown = counter.querySelector('.me-at-github-dropdown');
-      const bodyPortal = document.querySelector('body > .me-at-github-dropdown-portal');
-      
-      // Toggle dropdown visibility
-      if (dropdown && dropdown.style.display === 'block' || bodyPortal) {
-        hideDropdown(counter);
-      } else {
-        showDropdown(counter);
-      }
+      hideDropdown(counter);
     };
     
     // Insert the counter after the target element
@@ -826,16 +805,6 @@
     dropdown.classList.add('me-at-github-dropdown');
     dropdown.style.display = 'none';
     dropdown.style.zIndex = '2147483647'; // Set maximum z-index immediately
-    
-    // Try to escape stacking context by appending to body if needed
-    dropdown.addEventListener('DOMNodeInserted', function() {
-      // Additional z-index enforcement when dropdown is shown
-      setTimeout(() => {
-        if (dropdown.style.display === 'block') {
-          ensureMaxZIndex(dropdown);
-        }
-      }, 0);
-    });
     
     const list = document.createElement('ul');
     list.classList.add('me-at-github-dropdown-list');
@@ -1150,16 +1119,9 @@
     // Remove any dropdown elements
     document.querySelectorAll('.me-at-github-dropdown, .me-at-github-dropdown-portal').forEach(el => el.remove());
     
-    // Remove any raw navigation text that might be lingering
-    const allElements = document.querySelectorAll('*');
-    allElements.forEach(element => {
-      // Check for exact raw navigation patterns
-      if (element.textContent && element.textContent.match(/^[←→]?\s*\d+\/\d+\s*[←→]?$/)) {
-        element.remove();
-      }
-      
-      // Check for links that contain navigation text mixed with usernames
-      if (element.tagName === 'A' && element.textContent.includes('←') && element.textContent.includes('→') && element.textContent.includes('/')) {
+    // Remove any raw navigation text that might be lingering in user mention links
+    document.querySelectorAll('a.user-mention, a[data-hovercard-type="user"]').forEach(element => {
+      if (element.textContent && (element.textContent.includes('←') || element.textContent.includes('→')) && element.textContent.includes('/')) {
         // Extract just the username part
         const cleanText = element.textContent.replace(/[←→\s\d\/]/g, '').replace(/^@/, '@');
         if (cleanText.startsWith('@')) {
@@ -1184,8 +1146,8 @@
     // Clean up any previous initialization
     cleanup();
     
-    // Pre-cleanup: Remove any polluted navigation text from links
-    document.querySelectorAll('a').forEach(link => {
+    // Pre-cleanup: Remove any polluted navigation text from mention links
+    document.querySelectorAll('a.user-mention, a[data-hovercard-type="user"]').forEach(link => {
       if (link.textContent && (link.textContent.includes('←') || link.textContent.includes('→')) && link.textContent.includes('/')) {
         const cleanText = link.textContent.replace(/\s*[←→]\s*/g, '').replace(/\s*\d+\/\d+\s*/g, '').trim();
         if (cleanText.startsWith('@') && cleanText.length > 1) {
@@ -1420,15 +1382,6 @@
     childList: true,
     subtree: true
   });
-  
-  // Fallback: periodic check for URL changes (reduced frequency for better performance)
-  let currentUrl = location.href;
-  setInterval(() => {
-    if (location.href !== currentUrl) {
-      currentUrl = location.href;
-      setTimeout(() => initializeWithRetry(), 500);
-    }
-  }, 5000);
   
   // Health check: ensure extension is active on supported pages (reduced frequency for better performance)
   setInterval(() => {
