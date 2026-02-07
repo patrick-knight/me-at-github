@@ -149,33 +149,6 @@ html .me-at-github-dropdown {
   z-index: inherit !important;
 }
 
-/* Override GitHub's Box components and styled-components */
-.me-at-github-dropdown {
-  z-index: 2147483647 !important;
-  position: fixed !important;
-  isolation: isolate !important;
-}
-
-/* Force above GitHub Box components */
-[class*="Box-"] ~ .me-at-github-dropdown,
-.me-at-github-dropdown {
-  z-index: 2147483647 !important;
-}
-
-/* Force above specific GitHub components */
-.Box-sc-g0xbh4-0 ~ .me-at-github-dropdown,
-.crMLA-D ~ .me-at-github-dropdown,
-*[class*="crMLA"] ~ .me-at-github-dropdown {
-  z-index: 2147483647 !important;
-}
-
-/* Ensure dropdown container creates new stacking context */
-.me-at-github-counter {
-  position: relative !important;
-  z-index: 2147483647 !important;
-  isolation: isolate !important;
-}
-
 /* Dropdown positioning variants - positioning handled by JS with inline styles */
 .me-at-github-dropdown-center {
   max-width: calc(100vw - 32px);
