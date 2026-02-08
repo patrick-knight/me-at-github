@@ -13,6 +13,9 @@
   let cachedCounter = null;
   let cachedStickyCounter = null;
   let cachedDropdown = null;
+  
+  // Store interval IDs for cleanup
+  let healthCheckInterval = null;
 
   // Shared supported page patterns (DRY principle)
   const SUPPORTED_PAGE_PATTERNS = [
@@ -224,7 +227,10 @@
       }
       
       // Additional comprehensive checks for modern GitHub CSS modules
-      const className = element.className || '';
+      // Handle SVG elements which have className as SVGAnimatedString object
+      const className = typeof element.className === 'string' 
+        ? element.className 
+        : (element.className?.baseVal || '');
       
       // Check for CSS modules (GitHub's modern styling system)
       const excludedClassNamePatterns = [
@@ -801,7 +807,10 @@
       let isHeaderVisible = true;
       let scrollTimeout = null;
       const checkScroll = () => {
-        if (scrollTimeout) return; // Skip if already scheduled
+        // Clear any existing timeout to prevent multiple timeouts from queuing
+        if (scrollTimeout) {
+          clearTimeout(scrollTimeout);
+        }
         
         scrollTimeout = setTimeout(() => {
           const headerHeight = 80;
@@ -1053,8 +1062,8 @@
     dropdown.style.position = 'fixed';
     
     // Trigger layout calculation to ensure dropdown has dimensions for positioning
-    // This is intentional - we need the browser to calculate the dropdown's size
-    const _triggerLayout = dropdown.offsetHeight;
+    // This property access forces the browser to calculate layout before positioning
+    dropdown.offsetHeight;
     
     // Position the dropdown now that it has proper dimensions
     positionDropdown(counter, dropdown);
@@ -1116,6 +1125,12 @@
 
   // Clean up previous initialization
   function cleanup() {
+    // Clear interval to prevent memory leaks
+    if (healthCheckInterval) {
+      clearInterval(healthCheckInterval);
+      healthCheckInterval = null;
+    }
+    
     // Clear caches
     cachedCounter = null;
     cachedStickyCounter = null;
@@ -1416,7 +1431,7 @@
   });
   
   // Minimal health check with page visibility optimization
-  let healthCheckInterval = setInterval(() => {
+  healthCheckInterval = setInterval(() => {
     // Skip if document is hidden (user not viewing page)
     if (!username || document.hidden) return;
     
