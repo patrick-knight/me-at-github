@@ -228,9 +228,16 @@
       
       // Additional comprehensive checks for modern GitHub CSS modules
       // Handle SVG elements which have className as SVGAnimatedString object
-      const className = typeof element.className === 'string' 
-        ? element.className 
-        : (element.className?.baseVal || '');
+      let className = '';
+      if (element.className) {
+        if (typeof element.className === 'string') {
+          className = element.className;
+        } else if (element.className.baseVal !== undefined) {
+          className = element.className.baseVal;
+        } else {
+          className = String(element.className);
+        }
+      }
       
       // Check for CSS modules (GitHub's modern styling system)
       const excludedClassNamePatterns = [
@@ -283,7 +290,9 @@
     
     // Optimize: Use combined selector instead of multiple querySelectorAll calls
     // This reduces DOM traversals from 4 to 1
-    const combinedSelector = `a.user-mention, a[href*="/${username}"], a.mention, a[data-hovercard-type="user"]`;
+    // Escape username to prevent CSS selector injection
+    const escapedUsername = CSS.escape(username);
+    const combinedSelector = `a.user-mention, a[href*="/${escapedUsername}"], a.mention, a[data-hovercard-type="user"]`;
     const allLinks = document.querySelectorAll(combinedSelector);
     
     console.log(`findMentions: Found ${allLinks.length} potential mention links`);
@@ -829,7 +838,7 @@
             }, 200);
             isHeaderVisible = true;
           }
-          scrollTimeout = null;
+          // Timeout completed, will be cleared on next scroll if needed
         }, 100); // Throttle to 100ms
       };
       
@@ -1061,9 +1070,9 @@
     dropdown.style.zIndex = '2147483647';
     dropdown.style.position = 'fixed';
     
-    // Trigger layout calculation to ensure dropdown has dimensions for positioning
-    // void operator makes it explicit the return value is intentionally discarded
-    void dropdown.offsetHeight;
+    // Force layout calculation before positioning dropdown
+    // Reading offsetHeight triggers layout, ensuring dimensions are available
+    const _ = dropdown.offsetHeight;
     
     // Position the dropdown now that it has proper dimensions
     positionDropdown(counter, dropdown);
