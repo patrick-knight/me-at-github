@@ -73,7 +73,7 @@
 
 /* Dropdown menu using Primer Overlay component styles */
 .me-at-github-dropdown {
-  position: fixed !important;
+  position: fixed;
   background: var(--bgColor-default, #ffffff) !important;
   border: var(--borderWidth-thin, 1px) solid var(--borderColor-default, #d1d9e0);
   border-radius: var(--borderRadius-medium, 6px);

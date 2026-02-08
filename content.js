@@ -1062,8 +1062,8 @@
     dropdown.style.position = 'fixed';
     
     // Trigger layout calculation to ensure dropdown has dimensions for positioning
-    // This property access forces the browser to calculate layout before positioning
-    dropdown.offsetHeight;
+    // void operator makes it explicit the return value is intentionally discarded
+    void dropdown.offsetHeight;
     
     // Position the dropdown now that it has proper dimensions
     positionDropdown(counter, dropdown);
