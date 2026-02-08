@@ -1052,8 +1052,9 @@
     dropdown.style.zIndex = '2147483647';
     dropdown.style.position = 'fixed';
     
-    // Force a layout to ensure dimensions are available for positioning
-    const height = dropdown.offsetHeight;
+    // Trigger layout calculation to ensure dropdown has dimensions for positioning
+    // This is intentional - we need the browser to calculate the dropdown's size
+    const _triggerLayout = dropdown.offsetHeight;
     
     // Position the dropdown now that it has proper dimensions
     positionDropdown(counter, dropdown);
@@ -1394,13 +1395,13 @@
           const counter = cachedCounter || document.querySelector('.me-at-github-counter');
           if (counter) {
             cachedCounter = counter;
-            counter.textContent = `${mentions.length} mention${mentions.length !== 1 ? 's' : ''}`;
+            counter.textContent = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '');
             counter.title = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '') + ' of @' + username;
           }
           const stickyCounter = cachedStickyCounter || document.getElementById('me-at-github-sticky-counter');
           if (stickyCounter) {
             cachedStickyCounter = stickyCounter;
-            stickyCounter.textContent = `${mentions.length} mention${mentions.length !== 1 ? 's' : ''}`;
+            stickyCounter.textContent = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '');
             stickyCounter.title = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '') + ' of @' + username;
           }
         }

@@ -228,8 +228,6 @@
   white-space: nowrap;
   z-index: 2147483646 !important;
   gap: var(--base-size-4, 4px);
-  visibility: hidden;
-  opacity: 0;
   pointer-events: none;
   font-family: var(--fontStack-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif);
   display: none;
@@ -239,15 +237,11 @@
 .me-at-github-mention-text:hover .me-at-github-nav,
 .me-at-github-mention-text.active .me-at-github-nav {
   display: flex;
-  visibility: visible;
-  opacity: 1;
   pointer-events: auto;
 }
 
 .me-at-github-nav:hover {
   display: flex;
-  visibility: visible;
-  opacity: 1;
   pointer-events: auto;
 }
 
