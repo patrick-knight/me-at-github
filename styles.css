@@ -84,69 +84,7 @@
   overflow-y: auto;
   z-index: 2147483647 !important;
   font-family: var(--fontStack-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif);
-  -webkit-backdrop-filter: blur(0px);
-  backdrop-filter: blur(0px);
-}
-
-/* Force dropdown above all GitHub elements */
-.me-at-github-dropdown {
-  position: fixed !important;
-}
-
-/* Ensure dropdown appears above GitHub's mention suggestions and other popups */
-body .me-at-github-dropdown {
-  z-index: 2147483647 !important;
-}
-
-html .me-at-github-dropdown {
-  z-index: 2147483647 !important;
-}
-
-/* Create new stacking context to force proper layering */
-.me-at-github-dropdown {
-  will-change: transform !important;
-  transform: translateZ(0) !important;
-}
-
-/* Force above any potential GitHub overlays */
-.me-at-github-dropdown {
-  position: fixed !important;
-  z-index: 2147483647 !important;
-}
-
-/* Target specific GitHub styled-components patterns */
-*[class^="Box-"] + .me-at-github-counter .me-at-github-dropdown,
-*[class*="Box-"] + .me-at-github-counter .me-at-github-dropdown,
-*[class$="Box-"] + .me-at-github-counter .me-at-github-dropdown {
-  z-index: 2147483647 !important;
-}
-
-/* Override GitHub's Box components and styled-components */
-.me-at-github-dropdown {
   isolation: isolate !important;
-}
-
-/* Force above GitHub Box components */
-[class*="Box-"] ~ .me-at-github-dropdown {
-  z-index: 2147483647 !important;
-}
-
-/* Force above specific GitHub components that are causing issues */
-.Box-sc-g0xbh4-0 ~ .me-at-github-dropdown,
-.crMLA-D ~ .me-at-github-dropdown,
-*[class*="crMLA"] ~ .me-at-github-dropdown {
-  z-index: 2147483647 !important;
-}
-
-/* Ensure dropdown container creates new stacking context */
-.me-at-github-counter {
-  position: relative !important;
-  z-index: 2147483647 !important;
-  isolation: isolate !important;
-}
-
-.me-at-github-dropdown * {
-  z-index: inherit !important;
 }
 
 /* Dropdown positioning variants - positioning handled by JS with inline styles */
@@ -158,7 +96,6 @@ html .me-at-github-dropdown {
   width: auto;
   min-width: auto;
   max-width: none;
-  z-index: 2147483647 !important;
 }
 
 .me-at-github-dropdown-list {
@@ -278,7 +215,6 @@ html .me-at-github-dropdown {
 
 /* Navigation controls using Primer Overlay positioning */
 .me-at-github-nav {
-  display: none !important;
   position: absolute;
   top: 100%;
   left: 50%;
@@ -291,28 +227,22 @@ html .me-at-github-dropdown {
   box-shadow: var(--shadow-floating-small, 0 1px 3px rgba(16, 22, 26, 0.12), 0 1px 2px rgba(16, 22, 26, 0.24));
   white-space: nowrap;
   z-index: 2147483646 !important;
-  align-items: center;
   gap: var(--base-size-4, 4px);
-  visibility: hidden;
-  opacity: 0;
   pointer-events: none;
   font-family: var(--fontStack-system, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif);
+  display: none;
 }
 
 /* Navigation shows on hover and stays visible longer */
 .me-at-github-mention-text:hover .me-at-github-nav,
 .me-at-github-mention-text.active .me-at-github-nav {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  display: flex;
+  pointer-events: auto;
 }
 
 .me-at-github-nav:hover {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  display: flex;
+  pointer-events: auto;
 }
 
 .me-at-github-nav-btn {
@@ -356,7 +286,6 @@ html .me-at-github-dropdown {
     background: var(--bgColor-default, #0d1117) !important;
     border-color: var(--borderColor-default, #30363d);
     box-shadow: var(--shadow-floating-large, 0 16px 32px rgba(1, 4, 9, 0.1), 0 0 0 1px rgba(240, 246, 252, 0.1));
-    z-index: 2147483647 !important;
   }
   
   .me-at-github-dropdown-center {
@@ -364,10 +293,9 @@ html .me-at-github-dropdown {
   }
   
   .me-at-github-nav {
-    background: var(--bgColor-default, #0d1117) !important;
+    background: var(--bgColor-default, #0d1117);
     border-color: var(--borderColor-default, #30363d);
     box-shadow: var(--shadow-floating-small, 0 1px 3px rgba(16, 22, 26, 0.12), 0 1px 2px rgba(16, 22, 26, 0.24));
-    z-index: 2147483646 !important;
   }
   
   .me-at-github-dropdown-item {
@@ -425,87 +353,32 @@ html .me-at-github-dropdown {
   }
   
   .me-at-github-sticky-counter {
-    background: #58a6ff !important;
-    border-color: rgba(255, 255, 255, 0.1);
-    color: #000000 !important;
+    background: var(--bgColor-accent-emphasis, #58a6ff) !important;
+    border-color: var(--borderColor-accent-emphasis, rgba(255, 255, 255, 0.1));
+    color: var(--fgColor-onEmphasis, #000000) !important;
   }
   
   .me-at-github-sticky-counter:hover {
-    background: #4493f8 !important;
-    color: #000000 !important;
-  }
-  
-  .me-at-github-nav {
-    background: #161b22;
-    border-color: #30363d;
-    box-shadow: 0 4px 12px rgba(1, 4, 9, 0.3);
+    background: var(--bgColor-accent-emphasis-hover, #4493f8) !important;
+    color: var(--fgColor-onEmphasis, #000000) !important;
   }
   
   .me-at-github-nav-btn {
-    background: #161b22;
-    border-color: #30363d;
-    color: #c9d1d9;
+    background: var(--bgColor-default, #161b22);
+    border-color: var(--borderColor-default, #30363d);
+    color: var(--fgColor-default, #c9d1d9);
   }
   
   .me-at-github-nav-btn:hover {
-    background: #21262d;
-    border-color: #c9d1d9;
+    background: var(--bgColor-muted, #21262d);
+    border-color: var(--borderColor-default-hover, #c9d1d9);
   }
   
   .me-at-github-nav-btn:active {
-    background: #30363d;
+    background: var(--bgColor-muted-active, #30363d);
   }
   
   .me-at-github-nav-index {
-    color: #8b949e;
-  }
-  
-  /* Dark mode Box component overrides */
-  [class*="Box-"] ~ .me-at-github-dropdown,
-  .Box-sc-g0xbh4-0 ~ .me-at-github-dropdown,
-  .crMLA-D ~ .me-at-github-dropdown {
-    z-index: 2147483647 !important;
-    background: #161b22 !important;
-  }
-  
-  .me-at-github-counter {
-    z-index: 2147483647 !important;
-  }
-}
-
-/* Body-level dropdown portal to escape stacking context issues */
-.me-at-github-dropdown-portal {
-  position: fixed !important;
-  z-index: 2147483647 !important;
-  background: white !important;
-  border: 1px solid #d0d7de !important;
-  border-radius: 6px !important;
-  box-shadow: 0 8px 24px rgba(140, 149, 159, 0.2) !important;
-  min-width: 300px !important;
-  max-width: 500px !important;
-  max-height: 400px !important;
-  overflow-y: auto !important;
-}
-
-/* Aggressive navigation control hiding */
-.me-at-github-nav {
-  display: none !important;
-}
-
-/* Only show when explicitly hovered */
-.me-at-github-mention-text:hover .me-at-github-nav {
-  display: flex !important;
-}
-
-/* Hide navigation controls completely if there's only one mention */
-.me-at-github-mention-text .me-at-github-nav {
-  display: none !important;
-}
-
-@media (prefers-color-scheme: dark) {
-  .me-at-github-dropdown-portal {
-    background: #161b22 !important;
-    border-color: #30363d !important;
-    box-shadow: 0 8px 24px rgba(1, 4, 9, 0.3) !important;
+    color: var(--fgColor-muted, #8b949e);
   }
 }

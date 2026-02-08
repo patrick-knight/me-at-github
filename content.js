@@ -8,6 +8,14 @@
   let username = null;
   let mentions = [];
   let currentMentionIndex = -1;
+  
+  // Cache frequently accessed DOM elements
+  let cachedCounter = null;
+  let cachedStickyCounter = null;
+  let cachedDropdown = null;
+  
+  // Store interval IDs for cleanup
+  let healthCheckInterval = null;
 
   // Shared supported page patterns (DRY principle)
   const SUPPORTED_PAGE_PATTERNS = [
@@ -25,16 +33,28 @@
     // Check for username in the page header
     const userMenu = document.querySelector('meta[name="user-login"]');
     if (userMenu) {
-      return userMenu.getAttribute('content');
+      const username = userMenu.getAttribute('content');
+      return validateUsername(username);
     }
     
     // Fallback: check the signed-in user menu
     const signedInUser = document.querySelector('[data-login]');
     if (signedInUser) {
-      return signedInUser.getAttribute('data-login');
+      const username = signedInUser.getAttribute('data-login');
+      return validateUsername(username);
     }
     
     return null;
+  }
+  
+  // Validate username format (GitHub allows alphanumeric and hyphens only)
+  function validateUsername(username) {
+    if (!username || typeof username !== 'string') {
+      return null;
+    }
+    // GitHub usernames: 1-39 chars, alphanumeric or hyphens, cannot start/end with hyphen
+    const usernameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/;
+    return usernameRegex.test(username) ? username : null;
   }
 
   // Find all mentions of the username in @<username> format
@@ -207,9 +227,17 @@
       }
       
       // Additional comprehensive checks for modern GitHub CSS modules
-      const className = (element.className && element.className.toString) ? 
-        element.className.toString() : 
-        (element.className || '');
+      // Handle SVG elements which have className as SVGAnimatedString object
+      let className = '';
+      if (element.className) {
+        if (typeof element.className === 'string') {
+          className = element.className;
+        } else if (element.className.baseVal !== undefined) {
+          className = element.className.baseVal;
+        } else {
+          className = String(element.className);
+        }
+      }
       
       // Check for CSS modules (GitHub's modern styling system)
       const excludedClassNamePatterns = [
@@ -260,23 +288,14 @@
     
     const mentions = [];
     
-    // First, find GitHub's native user mention links
-    // Try multiple selectors as GitHub may use different classes
-    const mentionSelectors = [
-      'a.user-mention',
-      'a[href*="/' + username + '"]',
-      'a.mention',
-      'a[data-hovercard-type="user"]'
-    ];
+    // Optimize: Use combined selector instead of multiple querySelectorAll calls
+    // This reduces DOM traversals from 4 to 1
+    // Escape username to prevent CSS selector injection
+    const escapedUsername = CSS.escape(username);
+    const combinedSelector = `a.user-mention, a[href*="/${escapedUsername}"], a.mention, a[data-hovercard-type="user"]`;
+    const allLinks = document.querySelectorAll(combinedSelector);
     
-    const allLinks = new Set();
-    mentionSelectors.forEach(selector => {
-      const links = document.querySelectorAll(selector);
-      console.log(`findMentions: Found ${links.length} links for selector "${selector}"`);
-      links.forEach(link => allLinks.add(link));
-    });
-    
-    console.log(`findMentions: Total unique links found: ${allLinks.size}`);
+    console.log(`findMentions: Found ${allLinks.length} potential mention links`);
     
     allLinks.forEach((link, idx) => {
       const linkText = link.textContent.trim();
@@ -513,10 +532,19 @@
     // Ensure nav is hidden by default with inline style as fallback
     nav.style.display = 'none';
     
-    nav.innerHTML = `
-      <button class="me-at-github-nav-btn me-at-github-prev" title="Previous mention">←</button>
-      <button class="me-at-github-nav-btn me-at-github-next" title="Next mention">→</button>
-    `;
+    // Create navigation buttons safely without innerHTML
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'me-at-github-nav-btn me-at-github-prev';
+    prevBtn.title = 'Previous mention';
+    prevBtn.textContent = '←';
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'me-at-github-nav-btn me-at-github-next';
+    nextBtn.title = 'Next mention';
+    nextBtn.textContent = '→';
+    
+    nav.appendChild(prevBtn);
+    nav.appendChild(nextBtn);
     
     element.appendChild(nav);
     
@@ -705,7 +733,8 @@
     const counter = document.createElement('span');
     counter.classList.add('me-at-github-counter');
     counter.textContent = `${count} mention${count !== 1 ? 's' : ''}`;
-    counter.title = `${count} mention${count !== 1 ? 's' : ''} of @${username}`;
+    // Set title property directly to avoid attribute injection
+    counter.title = count + ' mention' + (count !== 1 ? 's' : '') + ' of @' + username;
     
     console.log('createCounter: Counter element created');
     
@@ -750,7 +779,7 @@
     stickyCounter.id = 'me-at-github-sticky-counter';
     stickyCounter.classList.add('me-at-github-sticky-counter');
     stickyCounter.textContent = `${count} mention${count !== 1 ? 's' : ''}`;
-    stickyCounter.title = `${count} mention${count !== 1 ? 's' : ''} of @${username}`;
+    stickyCounter.title = count + ' mention' + (count !== 1 ? 's' : '') + ' of @' + username;
     
         // Add click handler
     stickyCounter.addEventListener('click', (e) => {
@@ -764,7 +793,16 @@
     
     // Insert into GitHub's sticky header if available, otherwise fallback to body
     const stickyHeader = document.querySelector('[data-testid="issue-metadata-sticky"]');
-    const stickyContent = stickyHeader?.querySelector('.HeaderMetadata-module__stickyContent--jGltj');
+    // Use flexible selector strategy instead of hardcoded CSS module class
+    let stickyContent = null;
+    if (stickyHeader) {
+      // Try multiple selectors to find the content area (GitHub may change class names)
+      stickyContent = stickyHeader.querySelector('[class*="stickyContent"], [class*="sticky-content"], .sticky-content, [data-testid*="sticky-content"]');
+      // Fallback: use the sticky header itself if no content container found
+      if (!stickyContent) {
+        stickyContent = stickyHeader;
+      }
+    }
     
     if (stickyContent) {
       // Insert at the beginning of the sticky content
@@ -774,27 +812,37 @@
       document.body.appendChild(stickyCounter);
       
       // Show/hide based on scroll position (only for body-appended counter)
+      // Throttle scroll events for better performance
       let isHeaderVisible = true;
+      let scrollTimeout = null;
       const checkScroll = () => {
-        const headerHeight = 80;
-        const scrolled = window.scrollY > headerHeight;
-        
-        if (scrolled && isHeaderVisible) {
-          stickyCounter.style.display = 'flex';
-          stickyCounter.style.opacity = '1';
-          isHeaderVisible = false;
-        } else if (!scrolled && !isHeaderVisible) {
-          stickyCounter.style.opacity = '0';
-          setTimeout(() => {
-            if (window.scrollY <= headerHeight) {
-              stickyCounter.style.display = 'none';
-            }
-          }, 200);
-          isHeaderVisible = true;
+        // Clear any existing timeout to prevent multiple timeouts from queuing
+        if (scrollTimeout) {
+          clearTimeout(scrollTimeout);
         }
+        
+        scrollTimeout = setTimeout(() => {
+          const headerHeight = 80;
+          const scrolled = window.scrollY > headerHeight;
+          
+          if (scrolled && isHeaderVisible) {
+            stickyCounter.style.display = 'flex';
+            stickyCounter.style.opacity = '1';
+            isHeaderVisible = false;
+          } else if (!scrolled && !isHeaderVisible) {
+            stickyCounter.style.opacity = '0';
+            setTimeout(() => {
+              if (window.scrollY <= headerHeight) {
+                stickyCounter.style.display = 'none';
+              }
+            }, 200);
+            isHeaderVisible = true;
+          }
+          // Timeout completed, will be cleared on next scroll if needed
+        }, 100); // Throttle to 100ms
       };
       
-      window.addEventListener('scroll', checkScroll);
+      window.addEventListener('scroll', checkScroll, { passive: true });
       checkScroll(); // Initial check
     }
   }
@@ -1022,8 +1070,9 @@
     dropdown.style.zIndex = '2147483647';
     dropdown.style.position = 'fixed';
     
-    // Force a reflow to ensure the dropdown has dimensions
-    void dropdown.offsetHeight;
+    // Force layout calculation before positioning dropdown
+    // Reading offsetHeight triggers layout, ensuring dimensions are available
+    const _ = dropdown.offsetHeight;
     
     // Position the dropdown now that it has proper dimensions
     positionDropdown(counter, dropdown);
@@ -1085,6 +1134,17 @@
 
   // Clean up previous initialization
   function cleanup() {
+    // Clear interval to prevent memory leaks
+    if (healthCheckInterval) {
+      clearInterval(healthCheckInterval);
+      healthCheckInterval = null;
+    }
+    
+    // Clear caches
+    cachedCounter = null;
+    cachedStickyCounter = null;
+    cachedDropdown = null;
+    
     // Remove existing counters
     document.querySelectorAll('.me-at-github-counter').forEach(el => el.remove());
     
@@ -1236,12 +1296,6 @@
     }
   }
   
-  // Force re-initialization function (exposed globally for debugging)
-  window.meAtGitHubReinit = function() {
-    cleanup();
-    setTimeout(() => initializeWithRetry(), 100);
-  };
-  
   // Run when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -1361,16 +1415,18 @@
           
           // Only highlight the new mentions
           highlightMentions();
-          // Update counter if needed
-          const counter = document.querySelector('.me-at-github-counter');
+          // Update counters using cache or query
+          const counter = cachedCounter || document.querySelector('.me-at-github-counter');
           if (counter) {
-            counter.textContent = `@${mentions.length}`;
-            counter.title = `${mentions.length} mention${mentions.length !== 1 ? 's' : ''} of @${username}`;
+            cachedCounter = counter;
+            counter.textContent = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '');
+            counter.title = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '') + ' of @' + username;
           }
-          const stickyCounter = document.getElementById('me-at-github-sticky-counter');
+          const stickyCounter = cachedStickyCounter || document.getElementById('me-at-github-sticky-counter');
           if (stickyCounter) {
-            stickyCounter.textContent = `@${mentions.length}`;
-            stickyCounter.title = `${mentions.length} mention${mentions.length !== 1 ? 's' : ''} of @${username}`;
+            cachedStickyCounter = stickyCounter;
+            stickyCounter.textContent = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '');
+            stickyCounter.title = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '') + ' of @' + username;
           }
         }
       }, 500);
@@ -1383,13 +1439,13 @@
     subtree: true
   });
   
-  // Health check: ensure extension is active on supported pages (reduced frequency for better performance)
-  setInterval(() => {
-    // Only check if we have a username and document is visible
+  // Minimal health check with page visibility optimization
+  healthCheckInterval = setInterval(() => {
+    // Skip if document is hidden (user not viewing page)
     if (!username || document.hidden) return;
     
     if (isOnSupportedPage() && !document.querySelector('.me-at-github-counter')) {
-      // Use requestIdleCallback for non-critical reinitialization to avoid blocking
+      // Use requestIdleCallback for non-critical reinitialization
       if (window.requestIdleCallback) {
         window.requestIdleCallback(() => initializeWithRetry(), { timeout: 2000 });
       } else {
@@ -1398,7 +1454,7 @@
     }
   }, 30000);
 
-  // Expose force initialization function for debugging
+  // Expose debugging function for force initialization
   window.meAtGitHubForceInit = function() {
     initializeWithRetry(1, 1);
   };
