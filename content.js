@@ -8,6 +8,11 @@
   let username = null;
   let mentions = [];
   let currentMentionIndex = -1;
+  
+  // Cache frequently accessed DOM elements
+  let cachedCounter = null;
+  let cachedStickyCounter = null;
+  let cachedDropdown = null;
 
   // Shared supported page patterns (DRY principle)
   const SUPPORTED_PAGE_PATTERNS = [
@@ -219,9 +224,7 @@
       }
       
       // Additional comprehensive checks for modern GitHub CSS modules
-      const className = (element.className && element.className.toString) ? 
-        element.className.toString() : 
-        (element.className || '');
+      const className = element.className || '';
       
       // Check for CSS modules (GitHub's modern styling system)
       const excludedClassNamePatterns = [
@@ -775,7 +778,16 @@
     
     // Insert into GitHub's sticky header if available, otherwise fallback to body
     const stickyHeader = document.querySelector('[data-testid="issue-metadata-sticky"]');
-    const stickyContent = stickyHeader?.querySelector('.HeaderMetadata-module__stickyContent--jGltj');
+    // Use flexible selector strategy instead of hardcoded CSS module class
+    let stickyContent = null;
+    if (stickyHeader) {
+      // Try multiple selectors to find the content area (GitHub may change class names)
+      stickyContent = stickyHeader.querySelector('[class*="stickyContent"], [class*="sticky-content"], .sticky-content, [data-testid*="sticky-content"]');
+      // Fallback: use the sticky header itself if no content container found
+      if (!stickyContent) {
+        stickyContent = stickyHeader;
+      }
+    }
     
     if (stickyContent) {
       // Insert at the beginning of the sticky content
@@ -1103,6 +1115,11 @@
 
   // Clean up previous initialization
   function cleanup() {
+    // Clear caches
+    cachedCounter = null;
+    cachedStickyCounter = null;
+    cachedDropdown = null;
+    
     // Remove existing counters
     document.querySelectorAll('.me-at-github-counter').forEach(el => el.remove());
     
@@ -1373,14 +1390,16 @@
           
           // Only highlight the new mentions
           highlightMentions();
-          // Update counter if needed
-          const counter = document.querySelector('.me-at-github-counter');
+          // Update counters using cache or query
+          const counter = cachedCounter || document.querySelector('.me-at-github-counter');
           if (counter) {
+            cachedCounter = counter;
             counter.textContent = `${mentions.length} mention${mentions.length !== 1 ? 's' : ''}`;
             counter.title = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '') + ' of @' + username;
           }
-          const stickyCounter = document.getElementById('me-at-github-sticky-counter');
+          const stickyCounter = cachedStickyCounter || document.getElementById('me-at-github-sticky-counter');
           if (stickyCounter) {
+            cachedStickyCounter = stickyCounter;
             stickyCounter.textContent = `${mentions.length} mention${mentions.length !== 1 ? 's' : ''}`;
             stickyCounter.title = mentions.length + ' mention' + (mentions.length !== 1 ? 's' : '') + ' of @' + username;
           }
